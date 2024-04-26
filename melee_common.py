@@ -1,7 +1,8 @@
 from common import *
 import pymem
 import struct
-
+import threading
+import time
 
 EMU_SIZE = 0x2000000
 EMU_DIST = 0x10000
@@ -50,18 +51,82 @@ def pattern_scan_all(handle, pattern, *, return_multiple=False):
     return found
 
 
+def error_handler(func):
+    def wrapper(*args, **kwargs):
+        global pymem_error
+        global GALE01
+        result = None  # Initialize result outside the try block
+
+        try:
+            result = func(*args, **kwargs)
+        except Exception as e:
+            GALE01 = None
+            pymem_error = True
+            print(f"Error occurred: {e}")
+
+        else:
+            pymem_error = False  # Reset the global variable if no error occurred
+        return result
+    return wrapper
+
+
+@error_handler
+def find_pid():
+    pids = ["Slippi Dolphin.exe", "Dolphin.exe"]
+    for pid in pids:
+        try:
+            pm = pymem.Pymem(pid)
+            print(pm)
+            return pm
+        except:
+            continue
+    print("Dolphin is not running or version is unsupported!")
+    return None
+
+GALE01 = None
+pm = None
+
 # Finds 'GALE01' in memory.
 # This is used to jump to specific functions in Melee ie: GALE01 + CAM_START
-def set_pm():
+def get_melee(pm):
     handle = pm.process_handle
     byte_pattern = bytes.fromhex("47 41 4C 45 30 31 00 02")
     GALE01 = pattern_scan_all(handle, byte_pattern)
     return GALE01
 
 
-GALE01 = set_pm()
+def check_melee():
+    global pm
+    global GALE01
+    while True:
+        pm = find_pid()
+        if pm is None:
+            GALE01 = None
+            change_text_dolphin()
+        elif pm and GALE01 is None:
+            GALE01 = get_melee(pm)
+            change_text_melee()
+        if GALE01:
+            gale01_cb()
+            print("common", GALE01)
+        time.sleep(1)  # Adjust the interval as needed
+
+def change_text_dolphin():
+    import MeleeDebugConsole
+    MeleeDebugConsole.waiting_dolphin()
+
+def change_text_melee():
+    import MeleeDebugConsole
+    MeleeDebugConsole.waiting_melee()
 
 
+def gale01_cb():
+    import MeleeDebugConsole  # Import main.py to access Dear PyGui functions
+    MeleeDebugConsole.delete_error_popup()
+
+thread = threading.Thread(target=check_melee)
+thread.daemon = True  # Daemonize the thread so it stops when the main thread stops
+thread.start()
 def get_spawned_players():
     player_slots = {
         0: (GALE01 + PLAYER_ONE),
@@ -85,10 +150,10 @@ def get_spawned_players():
     return spawned_players, player_slots
 
 
-players, player_slots = get_spawned_players()
+# players, player_slots = get_spawned_players()
 
 
-def get_player_data(block):
+def get_player_data(pm, block):
     player = block
     gobj = pm.read_bytes(player + 0xB0, 4)[1:]
     gobj = int.from_bytes(gobj, 'big')
@@ -104,7 +169,7 @@ def get_player_data(block):
     return player_data
 
 
-def update_bg_colour(colour):
+def update_bg_colour(pm, colour):
     colour_int = [int(c, 16) for c in colour]
     addr = GALE01 + BG_COLOUR
     print(colour_int)
@@ -112,7 +177,7 @@ def update_bg_colour(colour):
     pm.write_bytes(addr, buf, len(buf))
 
 
-def toggle_collision_overlay(state):
+def toggle_collision_overlay(pm, state):
     player_blocks = list(player_slots.values())
     slots = players
     byte = 1 if state else 2
@@ -124,7 +189,7 @@ def toggle_collision_overlay(state):
         pm.write_bytes(player_data + 0x225C, buf, len(buf))
 
 
-def collision_overlay(slot, byte):
+def collision_overlay(pm, slot, byte):
     for player in players:
         if slot == player:
             player_blocks = list(player_slots.values())
@@ -134,42 +199,42 @@ def collision_overlay(slot, byte):
             pm.write_bytes(player_data + 0x225C, buf, len(buf))
 
 
-def toggle_pause(state):
+def toggle_pause(pm, state):
     addr = GALE01 + DEV_PAUSE
     byte = 0 if state else 1
     buf = struct.pack(">b", byte)
     pm.write_bytes(addr, buf, len(buf))
 
 
-def toggle_hud(state):
+def toggle_hud(pm, state):
     addr = GALE01 + GAME_HUD
     byte = 0 if state else 1
     buf = struct.pack(">b", byte)
     pm.write_bytes(addr, buf, len(buf))
 
 
-def toggle_pfx(state):
+def toggle_pfx(pm, state):
     addr = GALE01 + STAGE_FLAGS
     byte = 0 if state else 0x10
     buf = struct.pack(">b", byte)
     pm.write_bytes(addr, buf, len(buf))
 
 
-def toggle_bg(state):
+def toggle_bg(pm, state):
     addr = GALE01 + STAGE_FLAGS + 0x1
     byte = 0 if state else 0x4
     buf = struct.pack(">b", byte)
     pm.write_bytes(addr, buf, len(buf))
 
 
-def toggle_stagevsl(state):
+def toggle_stagevsl(pm, state):
     addr = GALE01 + STAGE_FLAGS + 0x1
     byte = 0 if state else 0x10
     buf = struct.pack(">b", byte)
     pm.write_bytes(addr, buf, len(buf))
 
 
-def toggle_char_vis(state):
+def toggle_char_vis(pm, state):
     addr = GALE01 + STAGE_FLAGS
     byte = 0 if state else 0x80
     buf = struct.pack(">B", byte)

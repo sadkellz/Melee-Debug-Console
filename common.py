@@ -14,86 +14,71 @@ BTN_CBBL = 81
 player_overlays = [100, 101, 102, 103]
 
 
-def find_pid():
-    pids = ["Slippi Dolphin.exe", "Dolphin.exe"]
-    for pid in pids:
-        try:
-            pm = pymem.Pymem(pid)
-            return pm
-        except:
-            continue
-    print("Dolphin is not running or version is unsupported!")
-    return None
-
-
-pm = find_pid()
-
-
-def read_int(address):
+def read_int(pm, address):
     raw = pm.read_bytes(address, 4)
     return struct.unpack('>i', raw)[0]
 
 
-def read_uint(address):
+def read_uint(pm, address):
     raw = pm.read_bytes(address, 4)
     return struct.unpack('>I', raw)[0]
 
 
-def read_float(address):
+def read_float(pm, address):
     raw = pm.read_bytes(address, 4)
     return struct.unpack('>f', raw)[0]
 
 
-def read_short(address):
+def read_short(pm, address):
     raw = pm.read_bytes(address, 4)
     return struct.unpack('>h', raw)[0]
 
 
-def read_ushort(address):
+def read_ushort(pm, address):
     raw = pm.read_bytes(address, 4)
     return struct.unpack('>H', raw)[0]
 
 
-def read_long(address):
+def read_long(pm, address):
     raw = pm.read_bytes(address, 4)
     return struct.unpack('>l', raw)[0]
 
 
-def read_ulong(address):
+def read_ulong(pm, address):
     raw = pm.read_bytes(address, 4)
     return struct.unpack('>L', raw)[0]
 
 
-def write_int(value, address):
+def write_int(pm, value, address):
     raw = struct.pack(">i", value)
     pm.write_bytes(address, raw, len(raw))
 
 
-def write_uint(value, address):
+def write_uint(pm, value, address):
     raw = struct.pack(">I", value)
     pm.write_bytes(address, raw, len(raw))
 
 
-def write_float(value, address):
+def write_float(pm, value, address):
     raw = struct.pack(">f", value)
     pm.write_bytes(address, raw, len(raw))
 
 
-def write_short(value, address):
+def write_short(pm, value, address):
     raw = struct.pack(">h", value)
     pm.write_bytes(address, raw, len(raw))
 
 
-def write_ushort(value, address):
+def write_ushort(pm, value, address):
     raw = struct.pack(">H", value)
     pm.write_bytes(address, raw, len(raw))
 
 
-def write_long(value, address):
+def write_long(pm, value, address):
     raw = struct.pack(">l", value)
     pm.write_bytes(address, raw, len(raw))
 
 
-def write_ulong(value, address):
+def write_ulong(pm, value, address):
     raw = struct.pack(">L", value)
     pm.write_bytes(address, raw, len(raw))
