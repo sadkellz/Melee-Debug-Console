@@ -19,7 +19,7 @@ STAGE_FLAGS = 0x453000
 BG_COLOUR = 0x452C70
 
 
-def get_spawned_players(base_addr, pm):
+def get_spawned_players(pm, base_addr):
     player_slots = {
         0: (base_addr + PLAYER_ONE),
         1: (base_addr + PLAYER_TWO),
@@ -58,7 +58,7 @@ def get_player_data(pm, block, base_addr):
     return player_data
 
 
-def update_bg_colour(pm, colour, base_addr):
+def update_bg_colour(colour, pm, base_addr):
     colour_int = [int(c, 16) for c in colour]
     addr = base_addr + BG_COLOUR
     print(colour_int)
@@ -66,66 +66,66 @@ def update_bg_colour(pm, colour, base_addr):
     pm.write_bytes(addr, buf, len(buf))
 
 
-def toggle_collision_overlay(base_addr, pm, state):
-    players, player_slots = get_spawned_players(base_addr, pm)
+def toggle_collision_overlay(state, pm, base_addr):
+    players, player_slots = get_spawned_players(pm, base_addr)
     player_blocks = list(player_slots.values())
     slots = players
     byte = 1 if state else 2
 
     for slot in slots:
         current_block = player_blocks[slot]
-        player_data = get_player_data(current_block)
+        player_data = get_player_data(pm, current_block, base_addr)
         buf = struct.pack(">b", byte)
         pm.write_bytes(player_data + 0x225C, buf, len(buf))
 
 
-def collision_overlay(base_addr, pm, slot, byte):
-    players, player_slots = get_spawned_players(base_addr, pm)
+def collision_overlay(slot, byte, pm, base_addr):
+    players, player_slots = get_spawned_players(pm, base_addr)
     for player in players:
         if slot == player:
             player_blocks = list(player_slots.values())
             current_block = player_blocks[slot]
-            player_data = get_player_data(current_block)
+            player_data = get_player_data(pm, current_block, base_addr)
             buf = struct.pack(">b", byte)
             pm.write_bytes(player_data + 0x225C, buf, len(buf))
 
 
-def toggle_pause(pm, state, base_addr):
+def toggle_pause(state, pm, base_addr):
     addr = base_addr + DEV_PAUSE
     byte = 0 if state else 1
     buf = struct.pack(">b", byte)
     pm.write_bytes(addr, buf, len(buf))
 
 
-def toggle_hud(pm, state, base_addr):
+def toggle_hud(state, pm, base_addr):
     addr = base_addr + GAME_HUD
     byte = 0 if state else 1
     buf = struct.pack(">b", byte)
     pm.write_bytes(addr, buf, len(buf))
 
 
-def toggle_pfx(pm, state, base_addr):
+def toggle_pfx(state, pm, base_addr):
     addr = base_addr + STAGE_FLAGS
     byte = 0 if state else 0x10
     buf = struct.pack(">b", byte)
     pm.write_bytes(addr, buf, len(buf))
 
 
-def toggle_bg(pm, state, base_addr):
+def toggle_bg(state, pm, base_addr):
     addr = base_addr + STAGE_FLAGS + 0x1
     byte = 0 if state else 0x4
     buf = struct.pack(">b", byte)
     pm.write_bytes(addr, buf, len(buf))
 
 
-def toggle_stagevsl(pm, state, base_addr):
+def toggle_stagevsl(state, pm, base_addr):
     addr = base_addr + STAGE_FLAGS + 0x1
     byte = 0 if state else 0x10
     buf = struct.pack(">b", byte)
     pm.write_bytes(addr, buf, len(buf))
 
 
-def toggle_char_vis(pm, state, base_addr):
+def toggle_char_vis(state, pm, base_addr):
     addr = base_addr + STAGE_FLAGS
     byte = 0 if state else 0x80
     buf = struct.pack(">B", byte)

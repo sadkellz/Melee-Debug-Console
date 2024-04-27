@@ -24,6 +24,7 @@ def popup():
                     _height = dpg.get_item_height(er_win)
                     dpg.add_text('Waiting for Dolphin.', tag="txt", pos=[90, 70])
 
+
 def check_pm():
     # time.sleep(2)
     pm_common.resources_initialized.wait()
@@ -69,7 +70,7 @@ def _help(message):
 def melee_debug_callback(sender, state):
     callback = callbacks.get(sender)
     if callback:
-        callback(pm_common.pm, state, pm_common.GALE01)
+        callback(state, pm_common.pm, pm_common.GALE01)
 
 
 def button_callback(sender, app_data, user_data):
@@ -91,14 +92,14 @@ def button_callback(sender, app_data, user_data):
 def colour_callback(sender, user_data):
     colour_int = [int(c * 255) for c in user_data]
     hex_colour = [hex(c)[2:].zfill(2) for c in colour_int][:3]
-    update_bg_colour(pm, hex_colour)
+    update_bg_colour(hex_colour, pm_common.pm, pm_common.GALE01)
 
 
 def slider_cb(sender, user_data):
     player = player_overlays.index(sender)
     byte = user_data
     print(player)
-    collision_overlay(pm, player, byte)
+    collision_overlay(player, byte, pm_common.pm, pm_common.GALE01)
 
 
 def exit_window():
@@ -195,8 +196,11 @@ def main():
         with dpg.theme() as enabled_theme:
             with dpg.theme_component(dpg.mvAll):
                 dpg.add_theme_color(dpg.mvThemeCol_Button, (91, 68, 50, 255), category=dpg.mvThemeCat_Core)
-
         dpg.add_spacer(height=1)
+
+        ################################
+        #       In-Game Toggles        #
+        ################################
         dpg.add_text("In-Game Toggles")
         ingame_window = dpg.add_child_window(width=-1, height=70, autosize_x=True, no_scrollbar=True)
         with dpg.table(header_row=False, resizable=False,
@@ -209,14 +213,17 @@ def main():
 
             with dpg.table_row():
                 dpg.add_button(label="Pause", width=-1, height=50, callback=button_callback,
-                               user_data=(True, disabled_theme, enabled_theme))
+                               user_data=(True, disabled_theme, enabled_theme), tag=150)
 
                 dpg.add_button(label="HUD", width=-1, height=50, callback=button_callback,
-                               user_data=(True, disabled_theme, enabled_theme))
+                               user_data=(True, disabled_theme, enabled_theme), tag=151)
 
                 dpg.add_button(label="Particles & FX", width=-1, height=50, callback=button_callback,
-                               user_data=(True, disabled_theme, enabled_theme))
+                               user_data=(True, disabled_theme, enabled_theme), tag=152)
 
+        ################################
+        #            Stage             #
+        ################################
         dpg.add_text("Stage")
         stage_window = dpg.add_child_window(width=-1, height=122, autosize_x=True, no_scrollbar=True)
         with dpg.table(header_row=False, resizable=False,
@@ -228,10 +235,10 @@ def main():
 
             with dpg.table_row():
                 dpg.add_button(label="Visibility", width=-1, height=50, callback=button_callback,
-                               user_data=(True, disabled_theme, enabled_theme))
+                               user_data=(True, disabled_theme, enabled_theme), tag=160)
 
                 dpg.add_button(label="Visuals", width=-1, height=50, callback=button_callback,
-                               user_data=(True, disabled_theme, enabled_theme))
+                               user_data=(True, disabled_theme, enabled_theme), tag=161)
             dpg.add_spacer(height=1, parent=stage_window)
             background_window = dpg.add_child_window(width=-1, height=40, autosize_x=True, parent=stage_window)
 
@@ -251,10 +258,13 @@ def main():
 
                 with dpg.table_row():
                     dpg.add_text("Background Colour: ")
-                    color = dpg.add_color_edit((255, 255, 255, 255), no_label=True, width=-1, callback=colour_callback,
+                    color = dpg.add_color_edit((0, 0, 0), no_label=True, width=-1, callback=colour_callback,
                                                user_data=True, display_mode=dpg.mvColorEdit_hex, no_alpha=True)
-
         dpg.add_spacer(height=10)
+
+        ################################
+        #          Characters          #
+        ################################
         dpg.add_text("Characters")
         _help("0")
         character_window = dpg.add_child_window(width=-1, height=180, autosize_x=True)
@@ -267,28 +277,21 @@ def main():
 
             with dpg.table_row():
                 dpg.add_button(label="Hide", width=-1, height=50, callback=button_callback,
-                               user_data=(True, disabled_theme, enabled_theme))
+                               user_data=(True, disabled_theme, enabled_theme), tag=170)
 
                 dpg.add_button(label="Collision Bubbles", width=-1, height=50, callback=button_callback,
-                               user_data=(True, disabled_theme, enabled_theme))
+                               user_data=(True, disabled_theme, enabled_theme), tag=171)
 
                 sliders_window = dpg.add_child_window(width=-1, height=100, autosize_x=True, parent=character_window)
                 with dpg.tab_bar(parent=sliders_window):
                     for i in range(0, 4):
-                        with dpg.tab(label=f"Player {i}"):
+                        with dpg.tab(label=f"Player {i+1}"):
                             with dpg.group(horizontal=True):
                                 dpg.add_text("Overlay Mode:")
                                 slider = dpg.add_slider_int(width=-1, max_value=3, tag=player_overlays[i],
                                                             callback=slider_cb, default_value=1)
+        # init alert
         popup()
-        # popup()
-        # with dpg.mutex():
-        #     with dpg.window(tag="error_popup", width=325, height=150, show=True, no_title_bar=True,
-        #                     modal=True, no_resize=True, no_close=True, no_move=True) as er_win:
-        #         _width = dpg.get_item_width(er_win)
-        #         _height = dpg.get_item_height(er_win)
-        #         txt = dpg.add_text('Waiting for Dolphin.', tag="txt")
-        #         auto_align(txt, 2, 0.5, 0.5)
 
     def cal_dow(sender, data):
         global title_bar_drag
@@ -315,13 +318,9 @@ def main():
         dpg.add_mouse_drag_handler(0, callback=cal)
         dpg.add_mouse_move_handler(callback=cal_dow)
 
-    # with dpg.value_registry():
-    #     dpg.add_string_value(default_value='Waiting for Dolphin', tag='error_text')
-
-
     dpg.show_viewport()
-
     dpg.start_dearpygui()
+
 
 if __name__ == "__main__":
     main()

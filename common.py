@@ -1,16 +1,17 @@
 import pymem
 import struct
 
-
-BTN_PAUSE = 45
-BTN_HUD = 46
-BTN_PFX = 47
-BTN_VSB = 54
-BTN_VSL = 55
-BTN_CLR = -1
-BTN_CVIS = 80
-BTN_CBBL = 81
-
+# Toggles: 50
+BTN_PAUSE = 150
+BTN_HUD = 151
+BTN_PFX = 152
+# Stage: 60
+BTN_VSB = 160
+BTN_VSL = 161
+BTN_CLR = 162
+# Character: 70, 100
+BTN_CVIS = 170
+BTN_CBBL = 171
 player_overlays = [100, 101, 102, 103]
 
 
