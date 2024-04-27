@@ -2,6 +2,7 @@ import dearpygui.dearpygui as dpg
 from melee_common import *
 import threading
 import time
+import pm_common
 
 width = 400
 height = 600
@@ -13,17 +14,46 @@ clr_hover = (128, 95, 70)
 title_bar_drag = False
 
 
-# def find_pid():
-#     pids = ["Slippi Dolphin.exe", "Dolphin.exe"]
-#     for pid in pids:
-#         try:
-#             pm = pymem.Pymem(pid)
-#             print(pm)
-#             return pm
-#         except:
-#             continue
-#     print("Dolphin is not running or version is unsupported!")
-#     return None
+def popup():
+    if not dpg.does_item_exist("error_popup"):
+        if dpg.does_item_exist("main_window"):
+            with dpg.mutex():
+                with dpg.window(tag="error_popup", width=330, height=150, show=True, no_title_bar=True,
+                                modal=True, no_resize=True, no_close=True, no_move=True) as er_win:
+                    _width = dpg.get_item_width(er_win)
+                    _height = dpg.get_item_height(er_win)
+                    dpg.add_text('Waiting for Dolphin.', tag="txt", pos=[90, 70])
+
+def check_pm():
+    # time.sleep(2)
+    pm_common.resources_initialized.wait()
+    while True:
+        # print("\n\nstart")
+        # print("pm: ", pm_common.pm)
+        if pm_common.pm is None:
+            # print("1")
+            if dpg.does_item_exist("error_popup"):
+                dpg.show_item("error_popup")
+                waiting_dolphin()
+                # print("2")
+        elif pm_common.pm and dpg.does_item_exist("error_popup"):
+            # print("3")
+            if pm_common.GALE01 is None:
+                dpg.show_item("error_popup")
+                waiting_melee()
+                # print("4")
+            else:
+                # print("GALE01: ", pm_common.GALE01)
+                dpg.hide_item("error_popup")
+                # print("5")
+        time.sleep(1)
+
+
+pm_thread = threading.Thread(target=pm_common.get_proc)
+check_thread = threading.Thread(target=check_pm)
+
+pm_thread.start()
+check_thread.start()
 
 
 def _help(message):
@@ -39,7 +69,7 @@ def _help(message):
 def melee_debug_callback(sender, state):
     callback = callbacks.get(sender)
     if callback:
-        callback(pm, state)
+        callback(pm_common.pm, state, pm_common.GALE01)
 
 
 def button_callback(sender, app_data, user_data):
@@ -75,64 +105,63 @@ def exit_window():
     dpg.destroy_context()
 
 
-def auto_align(item, alignment_type: int, x_align: float = 0.5, y_align: float = 0.5):
-    def _center_h(_s, _d, data):
-        parent = dpg.get_item_parent(data[0])
-        while dpg.get_item_info(parent)['type'] != "mvAppItemType::mvWindowAppItem":
-            parent = dpg.get_item_parent(parent)
-        parentWidth = dpg.get_item_rect_size(parent)[0]
-        width = dpg.get_item_rect_size(data[0])[0]
-        newX = (parentWidth // 2 - width // 2) * data[1] * 2
-        dpg.set_item_pos(data[0], [newX, dpg.get_item_pos(data[0])[1]])
-
-    def _center_v(_s, _d, data):
-        parent = dpg.get_item_parent(data[0])
-        while dpg.get_item_info(parent)['type'] != "mvAppItemType::mvWindowAppItem":
-            parent = dpg.get_item_parent(parent)
-        parentWidth = dpg.get_item_rect_size(parent)[1]
-        height = dpg.get_item_rect_size(data[0])[1]
-        newY = (parentWidth // 2 - height // 2) * data[1] * 2
-        dpg.set_item_pos(data[0], [dpg.get_item_pos(data[0])[0], newY])
-
-    if 0 <= alignment_type <= 2:
-        with dpg.item_handler_registry():
-            if alignment_type == 0:
-                # horizontal only alignment
-                dpg.add_item_visible_handler(callback=_center_h, user_data=[item, x_align])
-            elif alignment_type == 1:
-                # vertical only alignment
-                dpg.add_item_visible_handler(callback=_center_v, user_data=[item, y_align])
-            elif alignment_type == 2:
-                # both horizontal and vertical alignment
-                dpg.add_item_visible_handler(callback=_center_h, user_data=[item, x_align])
-                dpg.add_item_visible_handler(callback=_center_v, user_data=[item, y_align])
-
-        dpg.bind_item_handler_registry(item, dpg.last_container())
-
-
-def delete_error_popup():
-    dpg.delete_item("error_popup")
-    # print("delete")
+# def auto_align(item, alignment_type: int, x_align: float = 0.5, y_align: float = 0.5):
+#     def _center_h(_s, _d, data):
+#         parent = dpg.get_item_parent(data[0])
+#         while dpg.get_item_info(parent)['type'] != "mvAppItemType::mvWindowAppItem":
+#             parent = dpg.get_item_parent(parent)
+#         parentWidth = dpg.get_item_rect_size(parent)[0]
+#         width = dpg.get_item_rect_size(data[0])[0]
+#         newX = (parentWidth // 2 - width // 2) * data[1] * 2
+#         dpg.set_item_pos(data[0], [newX, dpg.get_item_pos(data[0])[1]])
+#
+#     def _center_v(_s, _d, data):
+#         parent = dpg.get_item_parent(data[0])
+#         while dpg.get_item_info(parent)['type'] != "mvAppItemType::mvWindowAppItem":
+#             parent = dpg.get_item_parent(parent)
+#         parentWidth = dpg.get_item_rect_size(parent)[1]
+#         height = dpg.get_item_rect_size(data[0])[1]
+#         newY = (parentWidth // 2 - height // 2) * data[1] * 2
+#         dpg.set_item_pos(data[0], [dpg.get_item_pos(data[0])[0], newY])
+#
+#     if 0 <= alignment_type <= 2:
+#         with dpg.item_handler_registry():
+#             if alignment_type == 0:
+#                 # horizontal only alignment
+#                 dpg.add_item_visible_handler(callback=_center_h, user_data=[item, x_align])
+#             elif alignment_type == 1:
+#                 # vertical only alignment
+#                 dpg.add_item_visible_handler(callback=_center_v, user_data=[item, y_align])
+#             elif alignment_type == 2:
+#                 # both horizontal and vertical alignment
+#                 dpg.add_item_visible_handler(callback=_center_h, user_data=[item, x_align])
+#                 dpg.add_item_visible_handler(callback=_center_v, user_data=[item, y_align])
+#
+#         dpg.bind_item_handler_registry(item, dpg.last_container())
 
 
 def waiting_dolphin():
+    if not dpg.does_item_exist("error_popup"):
+        return
     text = dpg.get_value("txt")
-    if text != "Waiting for Dolphin.":
-        dpg.set_value("txt", "Waiting for Dolphin.")
-    else:
-        waiting_states = ["Waiting for Dolphin.", "Waiting for Dolphin..", "Waiting for Dolphin..."]
+    waiting_states = ["Waiting for Dolphin.", "Waiting for Dolphin..", "Waiting for Dolphin..."]
+    if text in waiting_states:
         next_state = waiting_states[(waiting_states.index(text) + 1) % len(waiting_states)]
-        dpg.set_value("txt", next_state)
+    else:
+        next_state = "Waiting for Dolphin."
+    dpg.set_value("txt", next_state)
 
 
 def waiting_melee():
+    if not dpg.does_item_exist("error_popup"):
+        return
     text = dpg.get_value("txt")
-    if text != "Waiting for Melee.":
-        dpg.set_value("txt", "Waiting for Melee.")
-    else:
-        waiting_states = ["Waiting for Melee.", "Waiting for Melee..", "Waiting for Melee..."]
+    waiting_states = ["Waiting for Melee.", "Waiting for Melee..", "Waiting for Melee..."]
+    if text in waiting_states:
         next_state = waiting_states[(waiting_states.index(text) + 1) % len(waiting_states)]
-        dpg.set_value("txt", next_state)
+    else:
+        next_state = "Waiting for Melee."
+    dpg.set_value("txt", next_state)
 
 
 ################################
@@ -144,7 +173,7 @@ def main():
     dpg.setup_dearpygui()
 
     with dpg.window(label="Melee Debug Console", width=width, height=height, no_collapse=True, no_move=True, no_resize=True,
-                    on_close=exit_window) as win:
+                    on_close=exit_window, tag="main_window") as win:
 
         with dpg.theme() as global_theme:
             with dpg.theme_component(dpg.mvAll):
@@ -251,32 +280,15 @@ def main():
                                 dpg.add_text("Overlay Mode:")
                                 slider = dpg.add_slider_int(width=-1, max_value=3, tag=player_overlays[i],
                                                             callback=slider_cb, default_value=1)
-
-        # pm = None
-        # def check_dolphin():
-        #
-        #     while True:
-        #         if pm is None:
-        #             # Display the error popup
-        #             print("main")
-        #         else:
-        #             # Hide the error popup
-        #             # dpg.delete_item('error_popup')
-        #             print("main:", pm)
-        #             print("main:", GALE01)
-        #         time.sleep(1)  # Adjust the interval as needed
-        # #
-        # thread = threading.Thread(target=check_dolphin)
-        # thread.daemon = True  # Daemonize the thread so it stops when the main thread stops
-        # thread.start()
-
-        with dpg.mutex():
-            with dpg.window(tag="error_popup", width=325, height=150, show=True, no_title_bar=True,
-                            modal=True, no_resize=True, no_close=True, no_move=True) as er_win:
-                _width = dpg.get_item_width(er_win)
-                _height = dpg.get_item_height(er_win)
-                txt = dpg.add_text('Waiting for Dolphin.', tag="txt")
-                auto_align(txt, 2, 0.5, 0.5)
+        popup()
+        # popup()
+        # with dpg.mutex():
+        #     with dpg.window(tag="error_popup", width=325, height=150, show=True, no_title_bar=True,
+        #                     modal=True, no_resize=True, no_close=True, no_move=True) as er_win:
+        #         _width = dpg.get_item_width(er_win)
+        #         _height = dpg.get_item_height(er_win)
+        #         txt = dpg.add_text('Waiting for Dolphin.', tag="txt")
+        #         auto_align(txt, 2, 0.5, 0.5)
 
     def cal_dow(sender, data):
         global title_bar_drag
@@ -308,7 +320,10 @@ def main():
 
 
     dpg.show_viewport()
+
     dpg.start_dearpygui()
 
 if __name__ == "__main__":
     main()
+
+
