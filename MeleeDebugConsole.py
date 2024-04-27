@@ -4,14 +4,21 @@ import threading
 import time
 import pm_common
 
-width = 400
-height = 600
-
 clr_active = (91, 68, 50)
 clr_click = (128, 95, 70)
 clr_hover = (128, 95, 70)
 
 title_bar_drag = False
+
+
+def drag_viewport(sender, app_data, user_data):
+    drag_deltas = app_data
+    viewport_current_pos = dpg.get_viewport_pos()
+    new_x_position = viewport_current_pos[0] + drag_deltas[1]
+    new_y_position = viewport_current_pos[1] + drag_deltas[2]
+    new_y_position = max(new_y_position, 0)  # prevent the viewport to go off the top of the screen
+    dpg.set_viewport_pos([new_x_position, new_y_position])
+
 
 
 def popup():
@@ -103,8 +110,8 @@ def slider_cb(sender, user_data):
 
 
 def exit_window():
-    dpg.destroy_context()
-
+    # dpg.destroy_context()
+    pass
 
 # def auto_align(item, alignment_type: int, x_align: float = 0.5, y_align: float = 0.5):
 #     def _center_h(_s, _d, data):
@@ -169,12 +176,17 @@ def waiting_melee():
 #         Window Start         #
 ################################
 def main():
+    width = 400
+    height = 600
     dpg.create_context()
-    viewport = dpg.create_viewport(title="Melee Debug Console", width=width, height=height, decorated=False, resizable=False)
-    dpg.setup_dearpygui()
+    dpg.create_viewport(title="Melee Debug Console", width=width, height=height, decorated=False, resizable=False)
+    # dpg.setup_dearpygui()
 
     with dpg.window(label="Melee Debug Console", width=width, height=height, no_collapse=True, no_move=True, no_resize=True,
-                    on_close=exit_window, tag="main_window") as win:
+                    on_close=exit_window, tag="main_window"):
+
+        with dpg.handler_registry():
+            dpg.add_mouse_drag_handler(button=1, threshold=0.0, callback=drag_viewport)
 
         with dpg.theme() as global_theme:
             with dpg.theme_component(dpg.mvAll):
@@ -202,16 +214,16 @@ def main():
         #       In-Game Toggles        #
         ################################
         dpg.add_text("In-Game Toggles")
-        ingame_window = dpg.add_child_window(width=-1, height=70, autosize_x=True, no_scrollbar=True)
-        with dpg.table(header_row=False, resizable=False,
+        _help("Various toggles")
+        ingame_window = dpg.add_child_window(width=-1, height=94, autosize_x=True, no_scrollbar=True)
+        with dpg.table(header_row=False, resizable=False, tag="ingame",
                        borders_outerH=False, borders_innerH=False,
                        borders_outerV=False, delay_search=True, parent=ingame_window):
+            dpg.add_table_column()
+            dpg.add_table_column()
+            dpg.add_table_column()
 
-            dpg.add_table_column(label="1")
-            dpg.add_table_column(label="2")
-            dpg.add_table_column(label="3")
-
-            with dpg.table_row():
+            with dpg.table_row(parent="ingame"):
                 dpg.add_button(label="Pause", width=-1, height=50, callback=button_callback,
                                user_data=(True, disabled_theme, enabled_theme), tag=150)
 
@@ -221,19 +233,23 @@ def main():
                 dpg.add_button(label="Particles & FX", width=-1, height=50, callback=button_callback,
                                user_data=(True, disabled_theme, enabled_theme), tag=152)
 
+            with dpg.table_row(parent="ingame"):
+                dpg.add_button(label="Frame Advance", width=-1)
+
         ################################
         #            Stage             #
         ################################
         dpg.add_text("Stage")
+        _help("'Visuals' displays stage structure, \n ECB's, ledge grab boxes, and more")
         stage_window = dpg.add_child_window(width=-1, height=122, autosize_x=True, no_scrollbar=True)
-        with dpg.table(header_row=False, resizable=False,
+        with dpg.table(header_row=False, resizable=False, tag="stage_table",
                        borders_outerH=False, borders_innerH=False,
                        borders_outerV=False, delay_search=True, parent=stage_window):
-
-            dpg.add_table_column(label="1")
-            dpg.add_table_column(label="2")
-
-            with dpg.table_row():
+        #
+            dpg.add_table_column()
+            dpg.add_table_column()
+        #
+            with dpg.table_row(parent="stage_table"):
                 dpg.add_button(label="Visibility", width=-1, height=50, callback=button_callback,
                                user_data=(True, disabled_theme, enabled_theme), tag=160)
 
@@ -249,14 +265,14 @@ def main():
                     dpg.add_theme_style(dpg.mvStyleVar_ChildBorderSize, 1, category=dpg.mvThemeCat_Core)
 
             dpg.bind_item_theme(background_window, item_theme)
-            with dpg.table(header_row=False, resizable=False,
+            with dpg.table(header_row=False, resizable=False, tag="bg_table",
                            borders_outerH=False, borders_innerH=False,
                            borders_outerV=False, delay_search=True, parent=background_window, height=-1):
 
-                dpg.add_table_column(label="1")
-                dpg.add_table_column(label="2")
+                dpg.add_table_column()
+                dpg.add_table_column()
 
-                with dpg.table_row():
+                with dpg.table_row(parent="bg_table"):
                     dpg.add_text("Background Colour: ")
                     color = dpg.add_color_edit((0, 0, 0), no_label=True, width=-1, callback=colour_callback,
                                                user_data=True, display_mode=dpg.mvColorEdit_hex, no_alpha=True)
@@ -266,16 +282,16 @@ def main():
         #          Characters          #
         ################################
         dpg.add_text("Characters")
-        _help("0")
+        _help("Change character visibility and overlay modes.")
         character_window = dpg.add_child_window(width=-1, height=180, autosize_x=True)
-        with dpg.table(header_row=False, resizable=False,
+        with dpg.table(header_row=False, resizable=False, tag="char_table",
                        borders_outerH=False, borders_innerH=False,
                        borders_outerV=False, delay_search=True, parent=character_window):
 
-            dpg.add_table_column(label="1")
-            dpg.add_table_column(label="2")
+            dpg.add_table_column()
+            dpg.add_table_column()
 
-            with dpg.table_row():
+            with dpg.table_row(parent="char_table"):
                 dpg.add_button(label="Hide", width=-1, height=50, callback=button_callback,
                                user_data=(True, disabled_theme, enabled_theme), tag=170)
 
@@ -283,42 +299,19 @@ def main():
                                user_data=(True, disabled_theme, enabled_theme), tag=171)
 
                 sliders_window = dpg.add_child_window(width=-1, height=100, autosize_x=True, parent=character_window)
-                with dpg.tab_bar(parent=sliders_window):
-                    for i in range(0, 4):
-                        with dpg.tab(label=f"Player {i+1}"):
+                with dpg.tab_bar(parent=sliders_window) as tab_bar:
+                    for i in range(4):
+                        with dpg.tab(label=f"Player {i + 1}", tag=f"tab_{i}"):
                             with dpg.group(horizontal=True):
                                 dpg.add_text("Overlay Mode:")
-                                slider = dpg.add_slider_int(width=-1, max_value=3, tag=player_overlays[i],
-                                                            callback=slider_cb, default_value=1)
+                                dpg.add_slider_int(width=-1, max_value=3, tag=f"slider_{i}", callback=slider_cb,
+                                                   default_value=1)
         # init alert
         popup()
 
-    def cal_dow(sender, data):
-        global title_bar_drag
-        if dpg.is_mouse_button_down(0):
-            x = data[0]
-            y = data[1]
-            if -2 <= y <= 19:
-                title_bar_drag = True
-            else:
-                title_bar_drag = False
-
-
-    def cal(sender, data):
-        global title_bar_drag
-        if title_bar_drag:
-            pos = dpg.get_viewport_pos()
-            x = data[1]
-            y = data[2]
-            final_x = pos[0] + x
-            final_y = pos[1] + y
-            dpg.configure_viewport(viewport, x_pos=final_x, y_pos=final_y)
-
-    with dpg.handler_registry():
-        dpg.add_mouse_drag_handler(0, callback=cal)
-        dpg.add_mouse_move_handler(callback=cal_dow)
-
+    dpg.create_viewport(title="Melee Debug Console", width=width, height=height, decorated=False, resizable=False)
     dpg.show_viewport()
+    dpg.setup_dearpygui()
     dpg.start_dearpygui()
 
 
