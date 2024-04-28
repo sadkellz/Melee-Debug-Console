@@ -79,14 +79,30 @@ def toggle_collision_overlay(state, pm, base_addr):
         pm.write_bytes(player_data + 0x225C, buf, len(buf))
 
 
-def collision_overlay(slot, byte, pm, base_addr):
+def collision_overlay(slot, val, pm, base_addr):
     players, player_slots = get_spawned_players(pm, base_addr)
     for player in players:
         if slot == player:
             player_blocks = list(player_slots.values())
             current_block = player_blocks[slot]
             player_data = get_player_data(pm, current_block, base_addr)
-            buf = struct.pack(">b", byte)
+            current_flag = int.from_bytes(pm.read_bytes(player_data + 0x225C, 1), byteorder='big')
+
+            print(val)
+            if val <= 3:
+                mask = 0b11111100
+                current_flag &= mask
+                current_flag |= val
+            elif val == 4:
+                current_flag |= (1 << 2)
+                current_flag &= ((1 << (val - 2)) | ((1 << 2) - 1))
+            elif 4 < val < 10:
+                current_flag |= (1 << (val - 2))
+                current_flag &= ((1 << (val - 2)) | ((1 << 2) - 1))
+            elif val == 99:
+                current_flag &= ((1 << 1) | (1 << 0))
+
+            buf = struct.pack(">B", current_flag)
             pm.write_bytes(player_data + 0x225C, buf, len(buf))
 
 
@@ -132,10 +148,18 @@ def toggle_char_vis(state, pm, base_addr):
     pm.write_bytes(addr, buf, len(buf))
 
 
+def frame_adv(state, pm, base_addr):
+    addr = base_addr + FRAME_ADV
+    byte = 1
+    buf = struct.pack(">b", byte)
+    pm.write_bytes(addr, buf, len(buf))
+
+
 callbacks = {
     BTN_PAUSE:  toggle_pause,
     BTN_HUD:    toggle_hud,
     BTN_PFX:    toggle_pfx,
+    BTN_ADV:    frame_adv,
     BTN_VSB:    toggle_bg,
     BTN_VSL:    toggle_stagevsl,
     BTN_CVIS:   toggle_char_vis,

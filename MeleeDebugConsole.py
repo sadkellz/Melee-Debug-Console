@@ -8,8 +8,6 @@ clr_active = (91, 68, 50)
 clr_click = (128, 95, 70)
 clr_hover = (128, 95, 70)
 
-title_bar_drag = False
-
 
 def drag_viewport(sender, app_data, user_data):
     drag_deltas = app_data
@@ -18,7 +16,6 @@ def drag_viewport(sender, app_data, user_data):
     new_y_position = viewport_current_pos[1] + drag_deltas[2]
     new_y_position = max(new_y_position, 0)  # prevent the viewport to go off the top of the screen
     dpg.set_viewport_pos([new_x_position, new_y_position])
-
 
 
 def popup():
@@ -81,14 +78,14 @@ def melee_debug_callback(sender, state):
 
 
 def button_callback(sender, app_data, user_data):
+    print(sender)
     state, enabled_theme, disabled_theme = user_data
     state = not state
     dpg.bind_item_theme(sender, enabled_theme if state is True else disabled_theme)
     dpg.set_item_user_data(sender, (state, enabled_theme, disabled_theme))
     melee_debug_callback(sender, state)
-    # print(sender)
 
-    if sender == BTN_CVIS or BTN_CBBL:
+    if sender == 170 or sender == 171:  # Corrected condition
         for player in player_overlays:
             value = 1 if state else 0
             dpg.set_value(player, value)
@@ -104,14 +101,18 @@ def colour_callback(sender, user_data):
 
 def slider_cb(sender, user_data):
     player = player_overlays.index(sender)
-    byte = user_data
-    print(player)
-    collision_overlay(player, byte, pm_common.pm, pm_common.GALE01)
+    val = user_data
+    if sender in player_overlays2:
+        player = player - 4
+        val = val - 1
+        val = overlay2[val]
+        print("player", player)
+        print(val)
+    collision_overlay(player, val, pm_common.pm, pm_common.GALE01)
 
 
 def exit_window():
-    # dpg.destroy_context()
-    pass
+    dpg.destroy_context()
 
 # def auto_align(item, alignment_type: int, x_align: float = 0.5, y_align: float = 0.5):
 #     def _center_h(_s, _d, data):
@@ -234,7 +235,7 @@ def main():
                                user_data=(True, disabled_theme, enabled_theme), tag=152)
 
             with dpg.table_row(parent="ingame"):
-                dpg.add_button(label="Frame Advance", width=-1)
+                dpg.add_button(label="Frame Advance", width=-1, tag=153, callback=melee_debug_callback)
 
         ################################
         #            Stage             #
@@ -245,10 +246,10 @@ def main():
         with dpg.table(header_row=False, resizable=False, tag="stage_table",
                        borders_outerH=False, borders_innerH=False,
                        borders_outerV=False, delay_search=True, parent=stage_window):
-        #
+
             dpg.add_table_column()
             dpg.add_table_column()
-        #
+
             with dpg.table_row(parent="stage_table"):
                 dpg.add_button(label="Visibility", width=-1, height=50, callback=button_callback,
                                user_data=(True, disabled_theme, enabled_theme), tag=160)
@@ -303,9 +304,24 @@ def main():
                     for i in range(4):
                         with dpg.tab(label=f"Player {i + 1}", tag=f"tab_{i}"):
                             with dpg.group(horizontal=True):
-                                dpg.add_text("Overlay Mode:")
-                                dpg.add_slider_int(width=-1, max_value=3, tag=f"slider_{i}", callback=slider_cb,
-                                                   default_value=1)
+                                dpg.add_text("Collision Mode:")
+                                _help("0: Disabled\n"
+                                      "1: Normal\n"
+                                      "2: Collision Bubbles Only\n"
+                                      "3: Collision Overlay\n")
+                                dpg.add_slider_int(width=-1, max_value=3, tag=player_overlays[i],
+                                                   callback=slider_cb, default_value=1)
+                            with dpg.group(horizontal=True):
+                                dpg.add_text("Visual Mode:")
+                                _help("1: Normal\n"
+                                      "2: Costume Physics\n"
+                                      "3: Vertical Motion since Last Frame\n"
+                                      "4: CPU Logic\n"
+                                      "5: Item Grab Box\n"
+                                      "6: ?\n"
+                                      "7: Coin Detection\n")
+                                dpg.add_slider_int(width=-1, min_value=1, max_value=7, default_value=1,
+                                                   tag=player_overlays2[i], callback=slider_cb)
         # init alert
         popup()
 

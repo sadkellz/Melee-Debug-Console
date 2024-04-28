@@ -5,6 +5,7 @@ import struct
 BTN_PAUSE = 150
 BTN_HUD = 151
 BTN_PFX = 152
+BTN_ADV = 153
 # Stage: 60
 BTN_VSB = 160
 BTN_VSL = 161
@@ -12,7 +13,9 @@ BTN_CLR = 162
 # Character: 70, 100
 BTN_CVIS = 170
 BTN_CBBL = 171
-player_overlays = [100, 101, 102, 103]
+player_overlays = ["100", "101", "102", "103", "104", "105", "106", "107"]
+player_overlays2 = ["104", "105", "106", "107"]
+overlay2 = [99, 4, 5, 6, 7, 8, 9]
 
 
 def read_int(pm, address):
