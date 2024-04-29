@@ -3,10 +3,16 @@ from melee_common import *
 import threading
 import time
 import pm_common
+import StatsWindow
 
+viewport = None
 clr_active = (91, 68, 50)
 clr_click = (128, 95, 70)
 clr_hover = (128, 95, 70)
+
+
+def spawn_stats():
+    StatsWindow.stats_window()
 
 
 def drag_viewport(sender, app_data, user_data):
@@ -29,9 +35,17 @@ def popup():
                     dpg.add_text('Waiting for Dolphin.', tag="txt", pos=[90, 70])
 
 
+pm = None
+GALE01 = None
+
+
 def check_pm():
+    global pm
+    global GALE01
     # time.sleep(2)
     pm_common.resources_initialized.wait()
+    pm = pm_common.pm
+    GALE01 = pm_common.GALE01
     while True:
         # print("\n\nstart")
         # print("pm: ", pm_common.pm)
@@ -50,6 +64,7 @@ def check_pm():
             else:
                 # print("GALE01: ", pm_common.GALE01)
                 dpg.hide_item("error_popup")
+
                 # print("5")
         time.sleep(1)
 
@@ -63,12 +78,29 @@ check_thread.start()
 
 def _help(message):
     last_item = dpg.last_item()
+    if message == "help":
+        print(last_item)
     group = dpg.add_group(horizontal=True)
     dpg.move_item(last_item, parent=group)
     dpg.capture_next_item(lambda s: dpg.move_item(s, parent=group))
     t = dpg.add_text("(?)", color=[0, 255, 0])
     with dpg.tooltip(t):
         dpg.add_text(message)
+
+
+def _copyright():
+    t = dpg.add_text("(?)", color=[0, 255, 0], tag="copyright", pos=[360, 570])
+    # dpg.set_item_pos(t, [0, 590])
+    with dpg.tooltip(t, tag="c_tooltip"):
+        with dpg.group(horizontal=True):
+            dpg.add_text("(c)", color=[255, 255, 0])
+            dpg.add_text("KELLZ 2024", color=[255, 255, 255])
+
+        with dpg.group(horizontal=True):
+            dpg.add_text("@sadkellz", color=[0, 255, 255])
+
+        with dpg.group(horizontal=True):
+            dpg.add_text("kellz@boxr.gg", color=[100, 100, 100])
 
 
 def melee_debug_callback(sender, state):
@@ -177,17 +209,20 @@ def waiting_melee():
 #         Window Start         #
 ################################
 def main():
+    global viewport
     width = 400
     height = 600
     dpg.create_context()
-    dpg.create_viewport(title="Melee Debug Console", width=width, height=height, decorated=False, resizable=False)
-    # dpg.setup_dearpygui()
+
+    with dpg.handler_registry():
+        dpg.add_mouse_drag_handler(button=1, threshold=0.0, callback=drag_viewport)
 
     with dpg.window(label="Melee Debug Console", width=width, height=height, no_collapse=True, no_move=True, no_resize=True,
                     on_close=exit_window, tag="main_window"):
 
-        with dpg.handler_registry():
-            dpg.add_mouse_drag_handler(button=1, threshold=0.0, callback=drag_viewport)
+        with dpg.menu_bar():
+            with dpg.menu(label="Extra"):
+                dpg.add_menu_item(label="Stats", callback=StatsWindow.stats_window)
 
         with dpg.theme() as global_theme:
             with dpg.theme_component(dpg.mvAll):
@@ -216,6 +251,7 @@ def main():
         ################################
         dpg.add_text("In-Game Toggles")
         _help("Various toggles")
+
         ingame_window = dpg.add_child_window(width=-1, height=94, autosize_x=True, no_scrollbar=True)
         with dpg.table(header_row=False, resizable=False, tag="ingame",
                        borders_outerH=False, borders_innerH=False,
@@ -236,6 +272,8 @@ def main():
 
             with dpg.table_row(parent="ingame"):
                 dpg.add_button(label="Frame Advance", width=-1, tag=153, callback=melee_debug_callback)
+                # dpg.add_button(label="Stats Window", width=-1, callback=StatsWindow.stats_window)
+        dpg.add_spacer(height=10)
 
         ################################
         #            Stage             #
@@ -284,7 +322,7 @@ def main():
         ################################
         dpg.add_text("Characters")
         _help("Change character visibility and overlay modes.")
-        character_window = dpg.add_child_window(width=-1, height=180, autosize_x=True)
+        character_window = dpg.add_child_window(width=-1, height=186, autosize_x=True)
         with dpg.table(header_row=False, resizable=False, tag="char_table",
                        borders_outerH=False, borders_innerH=False,
                        borders_outerV=False, delay_search=True, parent=character_window):
@@ -299,36 +337,49 @@ def main():
                 dpg.add_button(label="Collision Bubbles", width=-1, height=50, callback=button_callback,
                                user_data=(True, disabled_theme, enabled_theme), tag=171)
 
-                sliders_window = dpg.add_child_window(width=-1, height=100, autosize_x=True, parent=character_window)
-                with dpg.tab_bar(parent=sliders_window) as tab_bar:
-                    for i in range(4):
-                        with dpg.tab(label=f"Player {i + 1}", tag=f"tab_{i}"):
-                            with dpg.group(horizontal=True):
+        sliders_window = dpg.add_child_window(width=-1, height=110, autosize_x=True, parent=character_window)
+        with dpg.group(horizontal=True, parent=sliders_window):
+            dpg.add_text("Overlay Modes")
+            _help("COLLISION\n"
+                  "\t0: Disabled\n"
+                  "\t1: Normal\n"
+                  "\t2: Collision Bubbles Only\n"
+                  "\t3: Collision Overlay\n"
+                  "VISUAL\n"
+                  "\t1: Normal\n"
+                  "\t2: Costume Physics\n"
+                  "\t3: Vertical Motion since Last Frame\n"
+                  "\t4: CPU Logic\n"
+                  "\t5: Item Grab Box\n"
+                  "\t6: ?\n"
+                  "\t7: Coin Detection")
+            with dpg.tab_bar(parent=sliders_window):
+                for i in range(4):
+                    with dpg.tab(label=f"Player {i + 1}", tag=f"tab_{i}"):
+                        with dpg.table(header_row=False, resizable=False,
+                                       borders_outerH=False, borders_innerH=False,
+                                       borders_outerV=False, delay_search=True):
+                            dpg.add_table_column()
+                            dpg.add_table_column()
+
+                            with dpg.table_row():
                                 dpg.add_text("Collision Mode:")
-                                _help("0: Disabled\n"
-                                      "1: Normal\n"
-                                      "2: Collision Bubbles Only\n"
-                                      "3: Collision Overlay\n")
                                 dpg.add_slider_int(width=-1, max_value=3, tag=player_overlays[i],
                                                    callback=slider_cb, default_value=1)
-                            with dpg.group(horizontal=True):
+
+                            with dpg.table_row():
                                 dpg.add_text("Visual Mode:")
-                                _help("1: Normal\n"
-                                      "2: Costume Physics\n"
-                                      "3: Vertical Motion since Last Frame\n"
-                                      "4: CPU Logic\n"
-                                      "5: Item Grab Box\n"
-                                      "6: ?\n"
-                                      "7: Coin Detection\n")
                                 dpg.add_slider_int(width=-1, min_value=1, max_value=7, default_value=1,
                                                    tag=player_overlays2[i], callback=slider_cb)
-        # init alert
+
+        _copyright()
         popup()
 
-    dpg.create_viewport(title="Melee Debug Console", width=width, height=height, decorated=False, resizable=False)
+    dpg.create_viewport(title="Melee Debug Console", width=width, height=height, decorated=False, resizable=True)
     dpg.show_viewport()
     dpg.setup_dearpygui()
     dpg.start_dearpygui()
+
 
 
 if __name__ == "__main__":

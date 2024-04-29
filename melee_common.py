@@ -1,6 +1,7 @@
 from common import *
 import pymem
 import struct
+from ctypes import *
 
 CAM_START = 0x453040
 CAM_TYPE = 0x452C6F
@@ -17,6 +18,128 @@ FRAME_ADV = 0x479D6A
 GAME_HUD = 0x4D6D58
 STAGE_FLAGS = 0x453000
 BG_COLOUR = 0x452C70
+
+
+class Vec3(Structure):
+    _fields_ = [("x", c_float),
+                ("y", c_float),
+                ("z", c_float)]
+
+
+class StaleMove(Structure):
+    # Atk ID, Num of action states
+    _fields_ = [
+        ("current_index",   c_int),
+        ("index_0",         c_short * 2),
+        ("index_1",         c_short * 2),
+        ("index_2",         c_short * 2),
+        ("index_3",         c_short * 2),
+        ("index_4",         c_short * 2),
+        ("index_5",         c_short * 2),
+        ("index_6",         c_short * 2),
+        ("index_7",         c_short * 2),
+        ("index_8",         c_short * 2),
+        ("index_9",         c_short * 2),
+    ]
+
+
+class Playerblock(Structure):
+    _fields_ = [
+        ("state", c_int),
+        ("ckind", c_int),
+        ("pkind", c_int),
+        ("is_transformed", c_byte * 2),
+        ("tag_pos", Vec3),
+        ("spawn_pos", Vec3),
+        ("respawn_pos", Vec3),
+        ("x34", c_int),
+        ("x38", c_int),
+        ("x3C", c_int),
+        ("initial_facing", c_float),
+        ("costume", c_byte),
+        ("x45", c_byte),
+        ("tint", c_byte),
+        ("team", c_byte),
+        ("controller", c_byte),
+        ("cpu_lvl", c_byte),
+        ("cpu_kind", c_byte),
+        ("handicap", c_byte),
+        ("x4C", c_byte),
+        ("kirby_copy", c_byte),
+        ("x4E", c_byte),
+        ("x4F", c_byte),
+        ("attack", c_float),
+        ("kb", c_float),
+        ("defense", c_float),
+        ("scale", c_float),
+        ("damage", c_short),
+        ("initial_damage", c_short),
+        ("stamina", c_short),
+        ("falls", c_int * 2),
+        ("ko", c_int * 6),
+        ("x88", c_int),
+        ("self_destructs", c_short),
+        ("stocks", c_byte),
+        ("coins_curr", c_int),
+        ("coins_total", c_int),
+        ("x98", c_int),
+        ("x9C", c_int),
+        ("stick_smashes", c_int * 2),
+        ("tag", c_int),
+        # ("xA8", c_int),
+        # ("xAC_flags", c_byte),
+        # ("xAC_80", c_byte, 1),
+        # ("is_multispawn", c_byte, 1),
+        # ("xAC_3f", c_byte, 6),
+        # ("xAD", c_byte),
+        # ("xAE", c_byte),
+        # ("xAF", c_byte),
+        ("xAC", c_int),
+        ("gobj", c_int),
+        ("sub_gobj", c_int),
+        ("callback", c_int),
+        ("stale_move", StaleMove),
+        ("atk_count", c_int),
+    ]
+
+
+class CharacterKind:
+    _ids = {
+        0: "Captain Falcon",
+        1: "Donkey Kong",
+        2: "Fox",
+        3: "Mr.Game & Watch",
+        4: "Kirby",
+        5: "Bowser",
+        6: "Link",
+        7: "Luigi",
+        8: "Mario",
+        9: "Marth",
+        10: "Mewtwo",
+        11: "Ness",
+        12: "Peach",
+        13: "Pikachu",
+        14: "Ice Climbers",
+        15: "Jigglypuff",
+        16: "Samus",
+        17: "Yoshi",
+        18: "Zelda",
+        19: "Sheik",
+        20: "Falco",
+        21: "Young Link",
+        22: "Dr.Mario",
+        23: "Roy",
+        24: "Pichu",
+        25: "Ganondorf",
+        26: "Master Hand",
+        27: "Wireframe Male(Boy)",
+        28: "Wireframe Female(Girl)",
+        29: "Giga Bowser",
+        30: "Crazy Hand",
+        31: "Sandbag",
+        32: "Popo",
+        33: "User Select",
+    }
 
 
 def get_spawned_players(pm, base_addr):
@@ -165,3 +288,12 @@ callbacks = {
     BTN_CVIS:   toggle_char_vis,
     BTN_CBBL:   toggle_collision_overlay,
 }
+
+
+def get_field_offset(field_name):
+    field_offset = getattr(Playerblock, field_name).offset
+    return field_offset
+
+
+
+

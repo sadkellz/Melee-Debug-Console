@@ -34,12 +34,12 @@ def read_float(pm, address):
 
 
 def read_short(pm, address):
-    raw = pm.read_bytes(address, 4)
+    raw = pm.read_bytes(address, 2)
     return struct.unpack('>h', raw)[0]
 
 
 def read_ushort(pm, address):
-    raw = pm.read_bytes(address, 4)
+    raw = pm.read_bytes(address, 2)
     return struct.unpack('>H', raw)[0]
 
 
@@ -86,3 +86,5 @@ def write_long(pm, value, address):
 def write_ulong(pm, value, address):
     raw = struct.pack(">L", value)
     pm.write_bytes(address, raw, len(raw))
+
+
