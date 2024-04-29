@@ -205,6 +205,7 @@ TAGS_4 = {
 }
 
 
+
 def create_player_table(slot, parent, tag):
     with dpg.collapsing_header(label=f"Player {slot+1}", parent=parent, leaf=True):
         with dpg.tree_node(label="Info"):
@@ -256,3 +257,24 @@ def create_player_table(slot, parent, tag):
                     with dpg.group(horizontal=True, horizontal_spacing=10):
                         dpg.add_text(f"Team: ")
                         dpg.add_text("0", tag=(tag+8))
+
+                with dpg.table_row():
+                    with dpg.group(horizontal=True, horizontal_spacing=10):
+                        dpg.add_text(f"Percent: ")
+                        dpg.add_text("0", tag=(tag+18))
+
+                with dpg.table_row():
+                    with dpg.group(horizontal=True, horizontal_spacing=10):
+                        dpg.add_text(f"SD's: ")
+                        dpg.add_text("0", tag=(tag+24))
+
+                with dpg.table_row():
+                    with dpg.group(horizontal=True, horizontal_spacing=10):
+                        dpg.add_text(f"Attack Count: ")
+                        dpg.add_text("0", tag=(tag+37))
+
+                with dpg.table_row():
+                    with dpg.group(horizontal=True, horizontal_spacing=10):
+                        dpg.add_text(f"GOBJ: ")
+                        dpg.add_text("0xFEE1DEAD", tag=(tag+33))
+                        dpg.add_button(label="copy", callback=lambda:dpg.set_clipboard_text(dpg.get_value(tag+33)))

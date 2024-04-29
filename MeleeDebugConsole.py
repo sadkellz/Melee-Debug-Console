@@ -69,8 +69,8 @@ def check_pm():
         time.sleep(1)
 
 
-pm_thread = threading.Thread(target=pm_common.get_proc)
-check_thread = threading.Thread(target=check_pm)
+pm_thread = threading.Thread(target=pm_common.get_proc, daemon=True)
+check_thread = threading.Thread(target=check_pm, daemon=True)
 
 pm_thread.start()
 check_thread.start()

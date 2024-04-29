@@ -31,7 +31,12 @@ def read_player_data(slot, pm, base_addr):
             result[field_name] = read_float(pm, player + ofst)
         elif field_type is c_int:
             ofst = get_field_offset(field_name)
-            result[field_name] = read_int(pm, player + ofst)
+            if field_name == 'gobj':
+                result[field_name] = pm.read_bytes(player + ofst, 4)[1:]
+                result[field_name] = int.from_bytes(result[field_name], 'big')
+                result[field_name] = result[field_name] + 0x80000000
+            else:
+                result[field_name] = read_int(pm, player + ofst)
         elif field_type is c_byte:
             ofst = get_field_offset(field_name)
             result[field_name] = pm.read_bytes(player + ofst, 1)
@@ -53,10 +58,10 @@ def read_player_data(slot, pm, base_addr):
 
 def map_data(field_name, value):
     if field_name == "state":
-        state_map = {0: "N/A", 2: ("EXISTS", white)}
-        return state_map.get(value, ("Unk", None))
+        state_map = {0: ("N/A", black), 1: ("N/A", black), 2: ("ACTIVE", white)}
+        return state_map.get(value, ("Unk", black))
     elif field_name == "pkind":
-        kind_map = {0: ("HMN", white), 1: ("CPU", grey),
+        kind_map = {0: ("HMN", (250, 220, 255)), 1: ("CPU", grey),
                     2: ("DEMO", black), 3: ("N/A", black)}
         return kind_map.get(value, ("Unknown", None))
     elif field_name == "ckind":
@@ -65,14 +70,15 @@ def map_data(field_name, value):
         return value, None
     elif field_name == "tag_pos":
         return value, magenta
+    elif field_name == "spawn_pos":
+        return value, magenta
+    elif field_name == "respawn_pos":
+        return value, magenta
+    elif field_name == "gobj":
+        value = hex(value)
+        return value, white
     else:
         return value, None
-
-
-# def update_slot_type(slot_type):
-#     slot_mapping = {0: "HMN", 1: "CPU", 2: "DEMO", 3: "N/A"}
-#     text = slot_mapping.get(slot_type, "Unknown")
-#     dpg.set_value("stats_pkind", text)
 
 
 def update_table_items():
@@ -123,68 +129,17 @@ def stats_window():
     dpg.add_window(label="Stats", width=_width, height=_height, pos=[399, 0], no_move=True,
                    no_resize=True, no_collapse=True, on_close=stats_window_close, tag=stats_main_id)
 
-    # player_stats = dpg.add_child_window(width=-1, autosize_x=True, no_scrollbar=True)
-    # dpg.add_text("Player Stats", parent=player_stats)
-    # with dpg.collapsing_header(label="Player 1", parent=player_stats, leaf=True):
-    #     with dpg.tree_node(label="Info"):
-    #         with dpg.table(header_row=False, borders_innerH=False, borders_outerH=True,
-    #                        borders_innerV=True, borders_outerV=True):
-    #             dpg.add_table_column()
-    #
-    #             with dpg.table_row():
-    #                 with dpg.group(horizontal=True, horizontal_spacing=10):
-    #                     dpg.add_text(f"State: ")
-    #                     dpg.add_text("def", color=(255, 0, 0), tag=8000)
-    #
-    #             with dpg.table_row():
-    #                 with dpg.group(horizontal=True, horizontal_spacing=10):
-    #                     dpg.add_text(f"Character: ")
-    #                     dpg.add_text("def", color=(255, 0, 0), tag=8001)
-    #
-    #             with dpg.table_row():
-    #                 with dpg.group(horizontal=True, horizontal_spacing=10):
-    #                     dpg.add_text(f"Slot Type: ")
-    #                     dpg.add_text("def", color=(255, 255, 255), tag=8002)
-    #
-    #             with dpg.table_row():
-    #                 with dpg.group(horizontal=True, horizontal_spacing=10):
-    #                     dpg.add_text(f"Tag Position: ")
-    #                     dpg.add_text("0", tag=8003)
-    #
-    #             with dpg.table_row():
-    #                 with dpg.group(horizontal=True, horizontal_spacing=10):
-    #                     dpg.add_text(f"Spawn Position: ")
-    #                     dpg.add_text("0", tag=8004)
-    #
-    #             with dpg.table_row():
-    #                 with dpg.group(horizontal=True, horizontal_spacing=10):
-    #                     dpg.add_text(f"Respawn Position: ")
-    #                     dpg.add_text("0", tag=8005)
-    #
-    #             with dpg.table_row():
-    #                 with dpg.group(horizontal=True, horizontal_spacing=10):
-    #                     dpg.add_text(f"Costume: ")
-    #                     dpg.add_text("0", tag=8006)
-    #
-    #             with dpg.table_row():
-    #                 with dpg.group(horizontal=True, horizontal_spacing=10):
-    #                     dpg.add_text(f"Tint: ")
-    #                     dpg.add_text("0", tag=8007)
-    #
-    #             with dpg.table_row():
-    #                 with dpg.group(horizontal=True, horizontal_spacing=10):
-    #                     dpg.add_text(f"Team: ")
-    #                     dpg.add_text("0", tag=8008)
-
     for i in range(4):
         if i > 0:
             tag = 8000 + (i * 100)
         else:
             tag = 8000
+
         create_player_table(i, stats_main_id, tag)
 
     # dpg.set_value("stats_slot_type", "omg")
     # stage_stats = dpg.add_child_window(width=-1, height=-100, autosize_y=True, autosize_x=True, no_scrollbar=True, parent=stats_main_id)
     # dpg.add_text("Stage Stats", parent=stage_stats)
-    # update_thread = threading.Thread(target=update_table_items())
-    # update_thread.start()
+    update_thread = threading.Thread(target=update_table_items, daemon=True)
+    update_thread.start()
+
