@@ -12,6 +12,7 @@ PLAYER_ONE = 0x453080
 PLAYER_TWO = 0x453F10
 PLAYER_THREE = 0x454DA0
 PLAYER_FOUR = 0x455C30
+players = [PLAYER_ONE, PLAYER_TWO, PLAYER_THREE, PLAYER_FOUR]
 
 DEV_PAUSE = 0x479D68
 FRAME_ADV = 0x479D6A
@@ -99,8 +100,108 @@ class Playerblock(Structure):
         ("sub_gobj", c_int),
         ("callback", c_int),
         ("stale_move", StaleMove),
-        ("atk_count", c_int),
+        ("atk_count", c_int)
     ]
+    FIELD_ADDRESSES = {
+        "state": 0x00,
+        "ckind": 0x00,
+        "pkind": 0x00,
+        "is_transformed": 0x00,
+        "tag_pos": 0x00,
+        "spawn_pos": 0x00,
+        "respawn_pos": 0x00,
+        "x34": 0x00,
+        "x38": 0x00,
+        "x3C": 0x00,
+        "initial_facing": 0x00,
+        "costume": 0x00,
+        "x45": 0x00,
+        "tint": 0x00,
+        "team": 0x00,
+        "controller": 0x00,
+        "cpu_lvl": 0x00,
+        "cpu_kind": 0x00,
+        "handicap": 0x00,
+        "x4C": 0x00,
+        "kirby_copy": 0x00,
+        "x4E": 0x00,
+        "x4F": 0x00,
+        "attack": 0x00,
+        "kb": 0x00,
+        "defense": 0x00,
+        "scale": 0x00,
+        "damage": 0x00,
+        "initial_damage": 0x00,
+        "stamina": 0x00,
+        "falls": 0x00,
+        "ko": 0x00,
+        "x88": 0x00,
+        "self_destructs": 0x00,
+        "stocks": 0x00,
+        "coins_curr": 0x00,
+        "coins_total": 0x00,
+        "x98": 0x00,
+        "x9C": 0x00,
+        "stick_smashes": 0x00,
+        "tag": 0x00,
+         # ("xA8": "0x00",
+         # ("xAC_flags": "0x00",
+         # ("xAC_80": "0x00",
+         # ("is_multispawn": "0x00",
+         # ("xAC_3f": "0x00",
+         # ("xAD", "0x00",
+         # ("xAE", "0x00",
+         # ("xAF", "0x00",
+        "xAC": 0x00,
+        "gobj": 0x00,
+        "sub_gobj": 0x00,
+        "callback": 0x00,
+        "stale_move": 0x00,
+        "atk_count": 0x00,
+    }
+
+
+class GOBJ(Structure):
+    _fields_ = [
+        ("entity_class", c_short),
+        ("p_link", c_char),
+        ("gx_link", c_char),
+        ("p_priority", c_char),
+        ("gx_pri", c_char),
+        ("obj_kind", c_char),
+        ("data_kind", c_char),
+        ("next", c_int),
+        ("previous", c_int),
+        ("nextOrdered", c_int),
+        ("previousOrdered", c_int),
+        ("proc", c_int),
+        ("gx_cb", c_int),
+        ("cobj_links", c_int64),
+        ("hsd_object", c_int),
+        ("userdata", c_int),
+        ("destructor_function", c_int),
+        ("unk_linked_list", c_int),
+    ]
+    FIELD_ADDRESSES = {
+        "entity_class": 0x00,
+        "p_link": 0x00,
+        "gx_link": 0x00,
+        "p_priority": 0x00,
+        "gx_pri": 0x00,
+        "obj_kind": 0x00,
+        "data_kind": 0x00,
+        "next": 0x00,
+        "previous": 0x00,
+        "nextOrdered": 0x00,
+        "previousOrdered": 0x00,
+        "proc": 0x00,
+        "gx_cb": 0x00,
+        "cobj_links": 0x00,
+        "hsd_object": 0x00,
+        "userdata": 0x00,
+        "destructor_function": 0x00,
+        "unk_linked_list": 0x00,
+    }
 
 
 class CharacterKind:
@@ -165,20 +266,20 @@ def get_spawned_players(pm, base_addr):
     return spawned_players, player_slots
 
 
-def get_player_data(pm, block, base_addr):
-    player = block
-    gobj = pm.read_bytes(player + 0xB0, 4)[1:]
-    gobj = int.from_bytes(gobj, 'big')
-    gobj = base_addr + gobj
-
-    player_data = pm.read_bytes(gobj + 0x2C, 4)[1:]
-    player_data = int.from_bytes(player_data, 'big')
-    player_data = base_addr + player_data
-    player_data = pm.read_bytes(player_data, 4)[1:]
-    player_data = int.from_bytes(player_data, 'big')
-    player_data = base_addr + player_data
-    # print(pm.read_bytes(player_data, 4))
-    return player_data
+# def get_player_data(pm, block, base_addr):
+#     player = block
+#     gobj = pm.read_bytes(player + 0xB0, 4)[1:]
+#     gobj = int.from_bytes(gobj, 'big')
+#     gobj = base_addr + gobj
+#
+#     player_data = pm.read_bytes(gobj + 0x2C, 4)[1:]
+#     player_data = int.from_bytes(player_data, 'big')
+#     player_data = base_addr + player_data
+#     player_data = pm.read_bytes(player_data, 4)[1:]
+#     player_data = int.from_bytes(player_data, 'big')
+#     player_data = base_addr + player_data
+#     # print(pm.read_bytes(player_data, 4))
+#     return player_data
 
 
 def update_bg_colour(colour, pm, base_addr):
@@ -290,10 +391,46 @@ callbacks = {
 }
 
 
-def get_field_offset(field_name):
-    field_offset = getattr(Playerblock, field_name).offset
+def get_field_offset(data_type, field_name):
+    field_offset = getattr(data_type, field_name).offset
     return field_offset
 
 
+PLAYER_BLOCKS = [Playerblock() for field_type in range(4)]
+player1 = PLAYER_BLOCKS[0]
+player1.state = 99
+print(player1.state)
 
+def get_player_data(playerblock, slot, pm, base_addr):
+    result = {}
+    player = base_addr + players[slot]
+    for field_name, field_type in playerblock._fields_:
+        if field_type is c_float:
+            ofst = get_field_offset(Playerblock, field_name)
+            result[field_name] = read_float(pm, player + ofst)
+        elif field_type is c_int:
+            ofst = get_field_offset(Playerblock, field_name)
+            if field_name == 'gobj':
+                result[field_name] = pm.read_bytes(player + ofst, 4)[1:]
+                result[field_name] = int.from_bytes(result[field_name], 'big')
+                result[field_name] = result[field_name] + 0x80000000
+            else:
+                result[field_name] = read_int(pm, player + ofst)
+        elif field_type is c_byte:
+            ofst = get_field_offset(Playerblock, field_name)
+            result[field_name] = pm.read_bytes(player + ofst, 1)
+            result[field_name] = int.from_bytes(result[field_name], byteorder='big')
+        elif field_type is c_short:
+            ofst = get_field_offset(Playerblock, field_name)
+            result[field_name] = read_short(pm, player + ofst)
+        elif field_type is Vec3:
+            ofst = get_field_offset(Playerblock, field_name)
+            result[field_name] = [
+                read_float(pm, player + ofst),
+                read_float(pm, (player + ofst + 4)),
+                read_float(pm, (player + ofst + 8))
+            ]
+        else:
+            result[field_name] = -1
+        playerblock.FIELD_ADDRESSES[field_name] = result[field_name]
 

@@ -16,7 +16,7 @@ cyan = (0, 255, 255)
 magenta = (255, 0, 255)
 yellow = (255, 255, 0)
 
-TAGS_LIST = [TAGS_0, TAGS_1, TAGS_2, TAGS_3]
+# PLAYER_BLOCK = [TAGS_0, TAGS_1, TAGS_2, TAGS_3]
 
 
 def read_player_data(slot, pm, base_addr):
@@ -27,10 +27,10 @@ def read_player_data(slot, pm, base_addr):
         # print("Field Name:", field_name)
         # print("Field Type:", field_type)
         if field_type is c_float:
-            ofst = get_field_offset(field_name)
+            ofst = get_field_offset(Playerblock, field_name)
             result[field_name] = read_float(pm, player + ofst)
         elif field_type is c_int:
-            ofst = get_field_offset(field_name)
+            ofst = get_field_offset(Playerblock, field_name)
             if field_name == 'gobj':
                 result[field_name] = pm.read_bytes(player + ofst, 4)[1:]
                 result[field_name] = int.from_bytes(result[field_name], 'big')
@@ -38,14 +38,14 @@ def read_player_data(slot, pm, base_addr):
             else:
                 result[field_name] = read_int(pm, player + ofst)
         elif field_type is c_byte:
-            ofst = get_field_offset(field_name)
+            ofst = get_field_offset(Playerblock, field_name)
             result[field_name] = pm.read_bytes(player + ofst, 1)
             result[field_name] = int.from_bytes(result[field_name], byteorder='big')
         elif field_type is c_short:
-            ofst = get_field_offset(field_name)
+            ofst = get_field_offset(Playerblock, field_name)
             result[field_name] = read_short(pm, player + ofst)
         elif field_type is Vec3:
-            ofst = get_field_offset(field_name)
+            ofst = get_field_offset(Playerblock, field_name)
             result[field_name] = [
                 read_float(pm, player + ofst),
                 read_float(pm, (player + ofst + 4)),
@@ -54,6 +54,23 @@ def read_player_data(slot, pm, base_addr):
         else:
             result[field_name] = None
     return result
+
+
+# def read_gobj_data(slot, pm, base_addr):
+#     result = {}
+#     for field_name, field_type in GOBJ._fields_:
+#         if field_type is c_int:
+#             result[field_name] = read_int(pm, base_addr + offset)
+#         elif field_type is c_char:
+#             result[field_name] = pm.read_bytes(base_addr + offset, 1)
+#             # result[field_name] = int.from_bytes(result[field_name], byteorder='big')
+#         elif field_type is c_short:
+#             result[field_name] = read_short(pm, base_addr + offset)
+#         elif field_type is c_int64:
+#             result[field_name] = read_uint(pm, base_addr + offset)
+#         else:
+#             result[field_name] = None
+#     return result
 
 
 def map_data(field_name, value):
@@ -88,11 +105,13 @@ def update_table_items():
     while True:
         color = white
         for i in range(4):
-            player_data = read_player_data(i, pm, GALE01)  # Read player data
-            for tag, field_name in TAGS_LIST[i].items():
+            # player_data = read_player_data(i, pm, GALE01)  # Read player data
+            get_player_data(PLAYER_BLOCKS[i], i, pm, GALE01)
+            for tag, field_name in PLAYER_TAGS[i].items():
                 try:
-                    value = player_data[field_name]
+                    value = PLAYER_BLOCKS[i].FIELD_ADDRESSES.get(field_name)
                     mapped_value, color = map_data(field_name, value)
+                    # print(tag)
                     dpg.set_value(tag, mapped_value)  # Use the tag directly as the item ID
                     dpg.configure_item(tag, color=color)  # Use the tag directly as the item ID
                 except KeyError:
@@ -128,14 +147,8 @@ def stats_window():
 
     dpg.add_window(label="Stats", width=_width, height=_height, pos=[399, 0], no_move=True,
                    no_resize=True, no_collapse=True, on_close=stats_window_close, tag=stats_main_id)
-
-    for i in range(4):
-        if i > 0:
-            tag = 8000 + (i * 100)
-        else:
-            tag = 8000
-
-        create_player_table(i, stats_main_id, tag)
+    # with dpg.collapsing_header(label=f"Player", leaf=True, parent=stats_main_id):
+    create_player_tables(stats_main_id)
 
     # dpg.set_value("stats_slot_type", "omg")
     # stage_stats = dpg.add_child_window(width=-1, height=-100, autosize_y=True, autosize_x=True, no_scrollbar=True, parent=stats_main_id)
