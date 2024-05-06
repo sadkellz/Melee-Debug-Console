@@ -15,6 +15,8 @@ Download the latest [release](https://github.com/sadkellz/Melee-Debug-Console/re
 and run.
 
 *Hold right click and drag to move the panel.*
+
+*Make sure "Enable Develop Mode" gecko code is running*
 ## Socials
 [ko-fi](https://ko-fi.com/sadkellz)
 
