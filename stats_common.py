@@ -1,5 +1,5 @@
 import dearpygui.dearpygui as dpg
-# from melee_common import Playerblock
+
 PLAYER_TAGS = []
 
 # trust me, i didnt want to do this...

@@ -1,4 +1,3 @@
-import pymem
 import struct
 
 # Toggles: 50

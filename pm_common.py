@@ -1,6 +1,5 @@
 import threading
 import time
-
 import pymem
 from pymem.exception import ProcessNotFound
 

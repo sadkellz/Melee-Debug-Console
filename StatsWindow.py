@@ -1,12 +1,6 @@
 import time
-import dearpygui.dearpygui as dpg
-import pymem
 import threading
-
-import melee_common
 import pm_common
-# from melee_common import Vec3, MoveIndex, StaleMove, KnockOuts, GOBJ, Playerblock,\
-#     CharacterKind, PLAYER_BLOCKS, get_player_data
 
 from melee_common import *
 from stats_common import *
