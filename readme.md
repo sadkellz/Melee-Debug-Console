@@ -2,8 +2,8 @@
 <img src="resources/mdc_ico.png" alt="Melee Debug Console Logo" width="100"/>
 </p>
 
-# <center> Melee Debug Console </center>
-##### <center> A simple GUI to control various aspects of Super Smash Bro's Melee. </center>
+# Melee Debug Console
+A simple GUI to control various aspects of Super Smash Bro's Melee.
 
 ## Panel Layout
 <p align="center">
