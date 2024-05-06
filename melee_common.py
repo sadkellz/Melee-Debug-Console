@@ -1,5 +1,5 @@
 from common import *
-import pymem
+# import pymem
 import struct
 from ctypes import *
 
@@ -27,21 +27,67 @@ class Vec3(Structure):
                 ("z", c_float)]
 
 
+class MoveIndex(Structure):
+    _fields_ = [
+        ("ID",              c_short),
+        ("Action States",   c_short),
+    ]
+
+
 class StaleMove(Structure):
     # Atk ID, Num of action states
     _fields_ = [
         ("current_index",   c_int),
-        ("index_0",         c_short * 2),
-        ("index_1",         c_short * 2),
-        ("index_2",         c_short * 2),
-        ("index_3",         c_short * 2),
-        ("index_4",         c_short * 2),
-        ("index_5",         c_short * 2),
-        ("index_6",         c_short * 2),
-        ("index_7",         c_short * 2),
-        ("index_8",         c_short * 2),
-        ("index_9",         c_short * 2),
+        ("index_0",         MoveIndex),
+        ("index_1",         MoveIndex),
+        ("index_2",         MoveIndex),
+        ("index_3",         MoveIndex),
+        ("index_4",         MoveIndex),
+        ("index_5",         MoveIndex),
+        ("index_6",         MoveIndex),
+        ("index_7",         MoveIndex),
+        ("index_8",         MoveIndex),
+        ("index_9",         MoveIndex),
     ]
+
+
+class KnockOuts(Structure):
+    # Atk ID, Num of action states
+    _fields_ = [
+        ("P1",   c_int),
+        ("P2",   c_int),
+        ("P3",   c_int),
+        ("P4",   c_int),
+        ("P5",   c_int),
+        ("P6",   c_int),
+    ]
+
+
+class GOBJ(Structure):
+    _fields_ = [
+        ("entity_class", c_short),
+        ("p_link", c_char),
+        ("gx_link", c_char),
+        ("p_priority", c_char),
+        ("gx_pri", c_char),
+        ("obj_kind", c_char),
+        ("data_kind", c_char),
+        ("next", c_int),
+        ("previous", c_int),
+        ("nextOrdered", c_int),
+        ("previousOrdered", c_int),
+        ("proc", c_int),
+        ("gx_cb", c_int),
+        ("cobj_links", c_int64),
+        ("hsd_object", c_int),
+        ("userdata", c_int),
+        ("destructor_function", c_int),
+        ("unk_linked_list", c_int),
+    ]
+
+    pointers = {
+        'root': 0x00,
+    }
 
 
 class Playerblock(Structure):
@@ -49,7 +95,7 @@ class Playerblock(Structure):
         ("state", c_int),
         ("ckind", c_int),
         ("pkind", c_int),
-        ("is_transformed", c_byte * 2),
+        ("is_transformed", c_short),
         ("tag_pos", Vec3),
         ("spawn_pos", Vec3),
         ("respawn_pos", Vec3),
@@ -76,8 +122,9 @@ class Playerblock(Structure):
         ("damage", c_short),
         ("initial_damage", c_short),
         ("stamina", c_short),
-        ("falls", c_int * 2),
-        ("ko", c_int * 6),
+        ("falls", c_int),
+        ("nana_falls", c_int),
+        ("ko", KnockOuts),
         ("x88", c_int),
         ("self_destructs", c_short),
         ("stocks", c_byte),
@@ -85,7 +132,8 @@ class Playerblock(Structure):
         ("coins_total", c_int),
         ("x98", c_int),
         ("x9C", c_int),
-        ("stick_smashes", c_int * 2),
+        ("stick_smashes", c_int),
+        ("stick_smashes2", c_int),
         ("tag", c_int),
         # ("xA8", c_int),
         # ("xAC_flags", c_byte),
@@ -96,112 +144,12 @@ class Playerblock(Structure):
         # ("xAE", c_byte),
         # ("xAF", c_byte),
         ("xAC", c_int),
-        ("gobj", c_int),
+        ("gobj", GOBJ),
         ("sub_gobj", c_int),
         ("callback", c_int),
         ("stale_move", StaleMove),
         ("atk_count", c_int)
     ]
-    FIELD_ADDRESSES = {
-        "state": 0x00,
-        "ckind": 0x00,
-        "pkind": 0x00,
-        "is_transformed": 0x00,
-        "tag_pos": 0x00,
-        "spawn_pos": 0x00,
-        "respawn_pos": 0x00,
-        "x34": 0x00,
-        "x38": 0x00,
-        "x3C": 0x00,
-        "initial_facing": 0x00,
-        "costume": 0x00,
-        "x45": 0x00,
-        "tint": 0x00,
-        "team": 0x00,
-        "controller": 0x00,
-        "cpu_lvl": 0x00,
-        "cpu_kind": 0x00,
-        "handicap": 0x00,
-        "x4C": 0x00,
-        "kirby_copy": 0x00,
-        "x4E": 0x00,
-        "x4F": 0x00,
-        "attack": 0x00,
-        "kb": 0x00,
-        "defense": 0x00,
-        "scale": 0x00,
-        "damage": 0x00,
-        "initial_damage": 0x00,
-        "stamina": 0x00,
-        "falls": 0x00,
-        "ko": 0x00,
-        "x88": 0x00,
-        "self_destructs": 0x00,
-        "stocks": 0x00,
-        "coins_curr": 0x00,
-        "coins_total": 0x00,
-        "x98": 0x00,
-        "x9C": 0x00,
-        "stick_smashes": 0x00,
-        "tag": 0x00,
-         # ("xA8": "0x00",
-         # ("xAC_flags": "0x00",
-         # ("xAC_80": "0x00",
-         # ("is_multispawn": "0x00",
-         # ("xAC_3f": "0x00",
-         # ("xAD", "0x00",
-         # ("xAE", "0x00",
-         # ("xAF", "0x00",
-        "xAC": 0x00,
-        "gobj": 0x00,
-        "sub_gobj": 0x00,
-        "callback": 0x00,
-        "stale_move": 0x00,
-        "atk_count": 0x00,
-    }
-
-
-class GOBJ(Structure):
-    _fields_ = [
-        ("entity_class", c_short),
-        ("p_link", c_char),
-        ("gx_link", c_char),
-        ("p_priority", c_char),
-        ("gx_pri", c_char),
-        ("obj_kind", c_char),
-        ("data_kind", c_char),
-        ("next", c_int),
-        ("previous", c_int),
-        ("nextOrdered", c_int),
-        ("previousOrdered", c_int),
-        ("proc", c_int),
-        ("gx_cb", c_int),
-        ("cobj_links", c_int64),
-        ("hsd_object", c_int),
-        ("userdata", c_int),
-        ("destructor_function", c_int),
-        ("unk_linked_list", c_int),
-    ]
-    FIELD_ADDRESSES = {
-        "entity_class": 0x00,
-        "p_link": 0x00,
-        "gx_link": 0x00,
-        "p_priority": 0x00,
-        "gx_pri": 0x00,
-        "obj_kind": 0x00,
-        "data_kind": 0x00,
-        "next": 0x00,
-        "previous": 0x00,
-        "nextOrdered": 0x00,
-        "previousOrdered": 0x00,
-        "proc": 0x00,
-        "gx_cb": 0x00,
-        "cobj_links": 0x00,
-        "hsd_object": 0x00,
-        "userdata": 0x00,
-        "destructor_function": 0x00,
-        "unk_linked_list": 0x00,
-    }
 
 
 class CharacterKind:
@@ -243,6 +191,9 @@ class CharacterKind:
     }
 
 
+PLAYER_BLOCKS = [Playerblock() for field_type in range(4)]
+
+
 def get_spawned_players(pm, base_addr):
     player_slots = {
         0: (base_addr + PLAYER_ONE),
@@ -266,20 +217,20 @@ def get_spawned_players(pm, base_addr):
     return spawned_players, player_slots
 
 
-# def get_player_data(pm, block, base_addr):
-#     player = block
-#     gobj = pm.read_bytes(player + 0xB0, 4)[1:]
-#     gobj = int.from_bytes(gobj, 'big')
-#     gobj = base_addr + gobj
-#
-#     player_data = pm.read_bytes(gobj + 0x2C, 4)[1:]
-#     player_data = int.from_bytes(player_data, 'big')
-#     player_data = base_addr + player_data
-#     player_data = pm.read_bytes(player_data, 4)[1:]
-#     player_data = int.from_bytes(player_data, 'big')
-#     player_data = base_addr + player_data
-#     # print(pm.read_bytes(player_data, 4))
-#     return player_data
+def get_player_flags(pm, block, base_addr):
+    player = block
+    gobj = pm.read_bytes(player + 0xB0, 4)[1:]
+    gobj = int.from_bytes(gobj, 'big')
+    gobj = base_addr + gobj
+
+    player_flags = pm.read_bytes(gobj + 0x2C, 4)[1:]
+    player_flags = int.from_bytes(player_flags, 'big')
+    player_flags = base_addr + player_flags
+    player_flags = pm.read_bytes(player_flags, 4)[1:]
+    player_flags = int.from_bytes(player_flags, 'big')
+    player_flags = base_addr + player_flags
+    # print(pm.read_bytes(player_data, 4))
+    return player_flags
 
 
 def update_bg_colour(colour, pm, base_addr):
@@ -291,26 +242,26 @@ def update_bg_colour(colour, pm, base_addr):
 
 
 def toggle_collision_overlay(state, pm, base_addr):
-    players, player_slots = get_spawned_players(pm, base_addr)
+    spawned, player_slots = get_spawned_players(pm, base_addr)
     player_blocks = list(player_slots.values())
-    slots = players
+    slots = spawned
     byte = 1 if state else 2
 
     for slot in slots:
         current_block = player_blocks[slot]
-        player_data = get_player_data(pm, current_block, base_addr)
+        player_flags = get_player_flags(pm, current_block, base_addr)
         buf = struct.pack(">b", byte)
-        pm.write_bytes(player_data + 0x225C, buf, len(buf))
+        pm.write_bytes(player_flags + 0x225C, buf, len(buf))
 
 
 def collision_overlay(slot, val, pm, base_addr):
-    players, player_slots = get_spawned_players(pm, base_addr)
-    for player in players:
+    spawned, player_slots = get_spawned_players(pm, base_addr)
+    for player in spawned:
         if slot == player:
             player_blocks = list(player_slots.values())
             current_block = player_blocks[slot]
-            player_data = get_player_data(pm, current_block, base_addr)
-            current_flag = int.from_bytes(pm.read_bytes(player_data + 0x225C, 1), byteorder='big')
+            player_flags = get_player_flags(pm, current_block, base_addr)
+            current_flag = int.from_bytes(pm.read_bytes(player_flags + 0x225C, 1), byteorder='big')
 
             print(val)
             if val <= 3:
@@ -327,7 +278,7 @@ def collision_overlay(slot, val, pm, base_addr):
                 current_flag &= ((1 << 1) | (1 << 0))
 
             buf = struct.pack(">B", current_flag)
-            pm.write_bytes(player_data + 0x225C, buf, len(buf))
+            pm.write_bytes(player_flags + 0x225C, buf, len(buf))
 
 
 def toggle_pause(state, pm, base_addr):
@@ -396,41 +347,124 @@ def get_field_offset(data_type, field_name):
     return field_offset
 
 
-PLAYER_BLOCKS = [Playerblock() for field_type in range(4)]
-player1 = PLAYER_BLOCKS[0]
-player1.state = 99
-print(player1.state)
+
+
+# def get_player_data(playerblock, slot, pm, base_addr):
+#     result = {}
+#     player = base_addr + players[slot]
+#     for field_name, field_type in playerblock._fields_:
+#         if field_type is c_float:
+#             ofst = get_field_offset(Playerblock, field_name)
+#             result[field_name] = read_float(pm, player + ofst)
+#         elif field_type is c_int:
+#             ofst = get_field_offset(Playerblock, field_name)
+#             if field_name == 'gobj':
+#                 result[field_name] = pm.read_bytes(player + ofst, 4)[1:]
+#                 result[field_name] = int.from_bytes(result[field_name], 'big')
+#                 result[field_name] = result[field_name] + 0x80000000
+#             else:
+#                 result[field_name] = read_int(pm, player + ofst)
+#         elif field_type is c_byte:
+#             ofst = get_field_offset(Playerblock, field_name)
+#             result[field_name] = pm.read_bytes(player + ofst, 1)
+#             result[field_name] = int.from_bytes(result[field_name], byteorder='big')
+#         elif field_type is c_short:
+#             ofst = get_field_offset(Playerblock, field_name)
+#             result[field_name] = read_short(pm, player + ofst)
+#         elif field_type is Vec3:
+#             ofst = get_field_offset(Playerblock, field_name)
+#             result[field_name] = [
+#                 read_float(pm, player + ofst),
+#                 read_float(pm, (player + ofst + 4)),
+#                 read_float(pm, (player + ofst + 8))
+#             ]
+#         else:
+#             result[field_name] = -1
+#         playerblock.FIELD_ADDRESSES[field_name] = result[field_name]
+
 
 def get_player_data(playerblock, slot, pm, base_addr):
-    result = {}
     player = base_addr + players[slot]
     for field_name, field_type in playerblock._fields_:
         if field_type is c_float:
             ofst = get_field_offset(Playerblock, field_name)
-            result[field_name] = read_float(pm, player + ofst)
+            value = read_float(pm, player + ofst)
         elif field_type is c_int:
             ofst = get_field_offset(Playerblock, field_name)
-            if field_name == 'gobj':
-                result[field_name] = pm.read_bytes(player + ofst, 4)[1:]
-                result[field_name] = int.from_bytes(result[field_name], 'big')
-                result[field_name] = result[field_name] + 0x80000000
-            else:
-                result[field_name] = read_int(pm, player + ofst)
+            # if field_name == 'gobj':
+            #     value = pm.read_bytes(player + ofst, 4)[1:]
+            #     value = int.from_bytes(value, 'big')
+            #     value = value + 0x80000000
+            # else:
+            #     value = read_int(pm, player + ofst)
+            value = read_int(pm, player + ofst)
         elif field_type is c_byte:
             ofst = get_field_offset(Playerblock, field_name)
-            result[field_name] = pm.read_bytes(player + ofst, 1)
-            result[field_name] = int.from_bytes(result[field_name], byteorder='big')
+            value = pm.read_bytes(player + ofst, 1)
+            value = int.from_bytes(value, byteorder='big')
         elif field_type is c_short:
             ofst = get_field_offset(Playerblock, field_name)
-            result[field_name] = read_short(pm, player + ofst)
+            value = read_short(pm, player + ofst)
         elif field_type is Vec3:
             ofst = get_field_offset(Playerblock, field_name)
-            result[field_name] = [
+            value = Vec3(
                 read_float(pm, player + ofst),
                 read_float(pm, (player + ofst + 4)),
                 read_float(pm, (player + ofst + 8))
-            ]
+            )
+        elif field_type is GOBJ:
+            value = GOBJ()
+            ofst = get_field_offset(Playerblock, field_name)
+            gobj_pointer = pm.read_bytes(player + ofst, 4)[1:]
+            gobj_pointer = int.from_bytes(gobj_pointer, 'big')
+            value.pointers.update({'root': (gobj_pointer + 0x80000000)})
+            gobj_pointer += base_addr
+            get_gobj_data(value, gobj_pointer, pm)
+        elif field_type is KnockOuts:  # If the field type is KnockOuts
+            value = KnockOuts()  # Create an instance of KnockOuts
+            ofst = get_field_offset(Playerblock, field_name)
+            ko_values = []
+            for i in range(6):
+                ko_values.append(read_int(pm, player + ofst + (i * sizeof(c_int))))
+            value.P1, value.P2, value.P3, value.P4, value.P5, value.P6 = ko_values
+        elif field_type is StaleMove:
+            value = StaleMove()
+            ofst = get_field_offset(Playerblock, field_name)
+            setattr(value, "current_index", read_int(pm, player + ofst))
+            ofst += sizeof(c_int)
+            for i in range(10):
+                move_index_values = (read_short(pm, player + ofst + i * sizeof(MoveIndex)),
+                                     read_short(pm, player + ofst + i * sizeof(MoveIndex) + sizeof(c_short)))
+                setattr(value, f"index_{i}", MoveIndex(*move_index_values))
         else:
-            result[field_name] = -1
-        playerblock.FIELD_ADDRESSES[field_name] = result[field_name]
+            value = -1
+
+        # Set the value directly in the playerblock instance
+        setattr(playerblock, field_name, value)
+
+
+def get_gobj_data(gobj, gobj_ptr, pm):
+    for field_name, field_type in GOBJ._fields_:
+        if field_type is c_int:
+            ofst = get_field_offset(GOBJ, field_name)
+            value = read_int(pm, gobj_ptr + ofst)
+            setattr(gobj, field_name, value)
+        if field_type is c_int64:
+            ofst = get_field_offset(GOBJ, field_name)
+            value = read_long(pm, gobj_ptr + ofst)
+            setattr(gobj, field_name, value)
+        elif field_type is c_byte:
+            ofst = get_field_offset(GOBJ, field_name)
+            value = pm.read_bytes(gobj_ptr + ofst, 1)
+            value = int.from_bytes(value, byteorder='big')
+            setattr(gobj, field_name, value)
+        elif field_type is c_char:
+            ofst = get_field_offset(GOBJ, field_name)
+            value = pm.read_bytes(gobj_ptr + ofst, 1)
+            value = int.from_bytes(value, byteorder='big')
+            setattr(gobj, field_name, value)
+        elif field_type is c_short:
+            ofst = get_field_offset(GOBJ, field_name)
+            value = read_short(pm, gobj_ptr + ofst)
+            setattr(gobj, field_name, value)
 

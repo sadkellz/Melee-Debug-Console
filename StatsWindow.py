@@ -2,7 +2,12 @@ import time
 import dearpygui.dearpygui as dpg
 import pymem
 import threading
+
+import melee_common
 import pm_common
+# from melee_common import Vec3, MoveIndex, StaleMove, KnockOuts, GOBJ, Playerblock,\
+#     CharacterKind, PLAYER_BLOCKS, get_player_data
+
 from melee_common import *
 from stats_common import *
 
@@ -19,41 +24,41 @@ yellow = (255, 255, 0)
 # PLAYER_BLOCK = [TAGS_0, TAGS_1, TAGS_2, TAGS_3]
 
 
-def read_player_data(slot, pm, base_addr):
-    players = [PLAYER_ONE, PLAYER_TWO, PLAYER_THREE, PLAYER_FOUR]
-    player = base_addr + players[slot]
-    result = {}
-    for field_name, field_type in Playerblock._fields_:
-        # print("Field Name:", field_name)
-        # print("Field Type:", field_type)
-        if field_type is c_float:
-            ofst = get_field_offset(Playerblock, field_name)
-            result[field_name] = read_float(pm, player + ofst)
-        elif field_type is c_int:
-            ofst = get_field_offset(Playerblock, field_name)
-            if field_name == 'gobj':
-                result[field_name] = pm.read_bytes(player + ofst, 4)[1:]
-                result[field_name] = int.from_bytes(result[field_name], 'big')
-                result[field_name] = result[field_name] + 0x80000000
-            else:
-                result[field_name] = read_int(pm, player + ofst)
-        elif field_type is c_byte:
-            ofst = get_field_offset(Playerblock, field_name)
-            result[field_name] = pm.read_bytes(player + ofst, 1)
-            result[field_name] = int.from_bytes(result[field_name], byteorder='big')
-        elif field_type is c_short:
-            ofst = get_field_offset(Playerblock, field_name)
-            result[field_name] = read_short(pm, player + ofst)
-        elif field_type is Vec3:
-            ofst = get_field_offset(Playerblock, field_name)
-            result[field_name] = [
-                read_float(pm, player + ofst),
-                read_float(pm, (player + ofst + 4)),
-                read_float(pm, (player + ofst + 8))
-            ]
-        else:
-            result[field_name] = None
-    return result
+# def read_player_data(slot, pm, base_addr):
+#     players = [PLAYER_ONE, PLAYER_TWO, PLAYER_THREE, PLAYER_FOUR]
+#     player = base_addr + players[slot]
+#     result = {}
+#     for field_name, field_type in Playerblock._fields_:
+#         # print("Field Name:", field_name)
+#         # print("Field Type:", field_type)
+#         if field_type is c_float:
+#             ofst = get_field_offset(Playerblock, field_name)
+#             result[field_name] = read_float(pm, player + ofst)
+#         elif field_type is c_int:
+#             ofst = get_field_offset(Playerblock, field_name)
+#             if field_name == 'gobj':
+#                 result[field_name] = pm.read_bytes(player + ofst, 4)[1:]
+#                 result[field_name] = int.from_bytes(result[field_name], 'big')
+#                 result[field_name] = result[field_name] + 0x80000000
+#             else:
+#                 result[field_name] = read_int(pm, player + ofst)
+#         elif field_type is c_byte:
+#             ofst = get_field_offset(Playerblock, field_name)
+#             result[field_name] = pm.read_bytes(player + ofst, 1)
+#             result[field_name] = int.from_bytes(result[field_name], byteorder='big')
+#         elif field_type is c_short:
+#             ofst = get_field_offset(Playerblock, field_name)
+#             result[field_name] = read_short(pm, player + ofst)
+#         elif field_type is Vec3:
+#             ofst = get_field_offset(Playerblock, field_name)
+#             result[field_name] = [
+#                 read_float(pm, player + ofst),
+#                 read_float(pm, (player + ofst + 4)),
+#                 read_float(pm, (player + ofst + 8))
+#             ]
+#         else:
+#             result[field_name] = None
+#     return result
 
 
 # def read_gobj_data(slot, pm, base_addr):
@@ -104,14 +109,17 @@ def update_table_items():
     GALE01 = pm_common.GALE01
     while True:
         color = white
-        for i in range(4):
+        for block in range(4):
             # player_data = read_player_data(i, pm, GALE01)  # Read player data
-            get_player_data(PLAYER_BLOCKS[i], i, pm, GALE01)
-            for tag, field_name in PLAYER_TAGS[i].items():
+            get_player_data(PLAYER_BLOCKS[block], block, pm, GALE01)
+            for tag, field_name in PLAYER_TAGS[block].items():
                 try:
-                    value = PLAYER_BLOCKS[i].FIELD_ADDRESSES.get(field_name)
+                    value = getattr(PLAYER_BLOCKS[block], field_name)
+                    if isinstance(value, Vec3):
+                        value = [value.x, value.y, value.z]
+                    if isinstance(value, GOBJ):
+                        value = GOBJ.pointers.get('root')
                     mapped_value, color = map_data(field_name, value)
-                    # print(tag)
                     dpg.set_value(tag, mapped_value)  # Use the tag directly as the item ID
                     dpg.configure_item(tag, color=color)  # Use the tag directly as the item ID
                 except KeyError:
@@ -120,6 +128,7 @@ def update_table_items():
                 except Exception as e:
                     # print(f"Error setting value for item {tag}: {e}")
                     continue
+            # get_gobj_data(PLAYER_BLOCKS[i], i, pm)
         time.sleep(0.5)
 
 
