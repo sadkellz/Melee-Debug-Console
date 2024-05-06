@@ -7,12 +7,12 @@
 
 ## Panel Layout
 <p align="center">
-<img src="https://raw.githubusercontent.com/sadkellz/CameraDX/main/resources/menu_graphic.png" alt="CameraDX Logo" width="500"/>
+<img src="resources/panel_preview.png" alt="Panel preview" width="300"/>
 </p>
 
 ## Installation
-Download the latest [release](https://github.com/sadkellz/CameraDX/releases)
-
+Download the latest [release](https://github.com/sadkellz/Melee-Debug-Console/releases),
+unzip and run.
 
 ## Socials
 [ko-fi](https://ko-fi.com/sadkellz)
