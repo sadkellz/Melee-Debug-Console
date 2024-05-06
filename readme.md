@@ -12,7 +12,7 @@ A simple GUI to control various aspects of Super Smash Bro's Melee.
 
 ## Installation and Tips
 Download the latest [release](https://github.com/sadkellz/Melee-Debug-Console/releases),
-unzip and run.
+and run.
 
 *Hold right click and drag to move the panel.*
 ## Socials
