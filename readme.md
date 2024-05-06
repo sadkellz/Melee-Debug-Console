@@ -10,10 +10,11 @@ A simple GUI to control various aspects of Super Smash Bro's Melee.
 <img src="resources/panel_preview.png" alt="Panel preview" width="300"/>
 </p>
 
-## Installation
+## Installation and Tips
 Download the latest [release](https://github.com/sadkellz/Melee-Debug-Console/releases),
 unzip and run.
 
+*Hold right click and drag to move the panel.*
 ## Socials
 [ko-fi](https://ko-fi.com/sadkellz)
 
